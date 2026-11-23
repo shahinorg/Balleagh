@@ -43,6 +43,14 @@
     .print-head img { height:56px; } .print-head div { flex:1; text-align:center; }
     @page { size:A4 landscape; margin:12mm; }
   }
+  @media (max-width:1000px) {
+    .side { gap:6px; padding:8px 10px; border-left:0; border-bottom:1px solid var(--border); scrollbar-width:none; }
+    .side a { flex:none; padding:8px 12px; border:1px solid var(--border); border-radius:999px; }
+    .side a span { display:none; }
+    .side a b { font-size:13px; white-space:nowrap; }
+    .main { padding:14px 12px 40px; }
+    .filters .field { min-width:0; flex:1 1 45%; }
+  }
 </style>
 </head>
 <body>

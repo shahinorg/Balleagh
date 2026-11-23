@@ -30,6 +30,13 @@
   .bar { position:sticky; top:0; background:#16211A; color:#fff; padding:10px 16px; display:flex; gap:10px; align-items:center; z-index:5; }
   .imgs { display:flex; gap:8px; } .imgs img { width:150px; height:110px; object-fit:cover; border-radius:6px; border:1px solid var(--border); }
   @media print { body { background:#fff; } .paper { margin:0; box-shadow:none; width:auto; min-height:0; padding:0; } @page { size:A4; margin:14mm; } }
+  @media screen and (max-width:860px) {
+    .paper { width:auto; min-height:0; margin:0; padding:16px 12px; box-shadow:none; overflow-x:auto; }
+    .lh img.gov { height:44px; } .lh img.pl { height:34px; } .lh .t b { font-size:15px; }
+    .meta { flex-direction:column; gap:2px; }
+    .tiles { grid-template-columns:repeat(2,1fr); }
+    table { font-size:11px; }
+  }
 </style>
 </head>
 <body>

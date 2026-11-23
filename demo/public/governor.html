@@ -11,6 +11,7 @@
 <link href="/css/app.css" rel="stylesheet">
 <style>
   .page { max-width:1280px; margin:0 auto; padding:18px 16px 40px; display:grid; gap:16px; }
+  .page > *, .grid2 > *, .grid3 > * { min-width:0; } /* let wide tables scroll inside their card instead of widening the page */
   .hello { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; }
   .hello h1 { margin:0; font-size:24px; }
   .grid2 { display:grid; grid-template-columns:1.25fr 1fr; gap:16px; }

@@ -175,3 +175,13 @@ textarea.input { min-height:84px; resize:vertical; line-height:1.7; }
 .uhead .urole { color:var(--primary); font-weight:500; }
 button.uitem { width:100%; border:0; background:none; cursor:pointer; font:inherit; text-align:right; }
 .demo-tag { margin-inline-start:auto; font-size:11px; font-weight:600; color:var(--gold-700); background:var(--gold-50); border:1px solid #F8DDA5; padding:1px 8px; border-radius:999px; }
+
+/* ---------- responsive: staff top bar on tablets/phones ---------- */
+@media (max-width: 900px) {
+  .topbar { flex-wrap:wrap; height:auto; min-height:56px; padding:8px 12px; row-gap:8px; column-gap:8px; }
+  .topbar > .spacer { display:none; }
+  .topbar > .umenu { margin-inline-start:auto; }
+  .topbar > .snav { order:50; flex:1 1 100%; margin:0 -4px; overflow-x:auto; padding-bottom:2px; }
+  .snav a { padding:6px 10px; font-size:13px; }
+  .seg button { min-height:32px; }
+}
