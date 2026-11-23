@@ -38,7 +38,7 @@ const ACCESS_PASS = process.env.DEMO_PASSWORD || '';
 const SESSION_SECRET = crypto.createHash('sha256').update(`ballegh:${process.env.SESSION_SECRET || ''}:${ACCESS_PASS}`).digest();
 const SESSION_MS = 12 * 3_600_000;
 const COOKIE = 'ballegh_staff';
-const STAFF_PAGES = /^\/(ops|unit|governor|admin|map|reports|report|demo)(\.html)?$/;
+const STAFF_PAGES = /^\/(ops|unit|governor|admin|map|reports|report|demo|presentation)(\.html)?$/;
 const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health', '/api/staff/login', '/api/staff/logout', '/api/staff/session']);
 const sameSecret = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const sign = exp => crypto.createHmac('sha256', SESSION_SECRET).update(`${ACCESS_USER}|${exp}`).digest('base64url');

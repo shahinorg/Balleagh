@@ -44,6 +44,7 @@
     <a class="role" href="/" target="_blank"><span class="ic" id="i5"></span><b>الموقع العام</b><span>الصفحة الرئيسية للمواطنين: إزاي تبلّغ، الإحصائيات، الأسئلة الشائعة، الطوارئ.</span><em>محتواه من الـ CMS</em></a>
     <a class="role" href="/map.html" target="_blank"><span class="ic" id="i6"></span><b>الخريطة (Map Viewer)</b><span>طبقات، استعلام، بحث، شريط زمني، قياس، وتصدير GeoJSON و Excel.</span><em>GIS</em></a>
     <a class="role" href="/reports.html" target="_blank"><span class="ic" id="i7"></span><b>مركز التقارير</b><span>9 أنواع تقارير بفلاتر وفترات مخصصة، وتصدير Excel وطباعة PDF.</span><em>تحليل ورقابة</em></a>
+    <a class="role" href="/presentation.html" target="_blank" style="border-color:#F4A21D;background:#FEF6E6"><span class="ic" id="i9" style="background:#F4A21D;color:#3B2600"></span><b>العرض التقديمي</b><span>16 شريحة: المشكلة، الفكرة، ماذا تحل، العوائق وحلولها، المنطقة التجريبية، والمطلوب من المحافظة.</span><em>للعرض على المحافظ</em></a>
     <a class="role" href="/admin.html" target="_blank"><span class="ic" id="i8"></span><b>الإعدادات (CMS)</b><span>التصنيفات، مدد الحل، التصعيد، الأوزان، الوحدات، المستخدمون، ومحتوى الموقع.</span><em>مشرف الغرفة</em></a>
   </div>
   <div class="card"><h3>سيناريو العرض المقترح (7 دقائق)</h3>
@@ -73,7 +74,7 @@ document.getElementById('i1').innerHTML = icon('camera', 26);
 document.getElementById('i2').innerHTML = icon('layers', 26);
 document.getElementById('i3').innerHTML = icon('doc', 26);
 document.getElementById('i4').innerHTML = icon('bell', 26);
-['i5:image', 'i6:pin', 'i7:doc', 'i8:filter'].forEach(x => { const [id, n] = x.split(':'); document.getElementById(id).innerHTML = icon(n, 26); });
+['i5:image', 'i6:pin', 'i7:doc', 'i8:filter', 'i9:volume'].forEach(x => { const [id, n] = x.split(':'); document.getElementById(id).innerHTML = icon(n, 26); });
 api('/api/info').then(i => { document.getElementById('lan').innerHTML = i.lan.map(u => `<span class="lan">${u}/citizen.html</span>`).join('') || '<span class="muted small">مفيش شبكة محلية متاحة</span>'; });
 document.getElementById('reset').onclick = async () => {
   if (!confirm('هيتم مسح كل البلاغات الحالية وتوليد بيانات تجريبية جديدة. متأكد؟')) return;
