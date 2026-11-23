@@ -271,8 +271,19 @@ app.get('/api/audit/verify', wrap(() => verifyAudit()));
 app.get('/api/audit', wrap(req => {
   const u = actor(req);
   if (!['OPS_SUPERVISOR', 'OPS_REVIEWER', 'GOVERNOR'].includes(u.role)) throw httpError(403, 'غير مصرح');
-  const rows = req.query.entityId ? db.audit.filter(a => a.entityId === req.query.entityId) : db.audit.slice(-200);
-  return rows.map(a => ({ ...a, actorName: a.actorId === 'system' ? 'النظام' : userById(a.actorId)?.name }));
+  const q = req.query;
+  const from = q.from ? Number(q.from) : 0, to = q.to ? Number(q.to) : Infinity;
+  const limit = Math.min(3000, Number(q.limit) || 200);
+  let rows = q.entityId ? db.audit.filter(a => a.entityId === q.entityId) : db.audit.filter(a => a.at >= from && a.at <= to);
+  const total = rows.length;
+  rows = rows.slice(-limit);
+  const out = rows.map(a => ({ ...a, actorName: a.actorId === 'system' ? 'النظام' : userById(a.actorId)?.name, reportCode: a.entity === 'report' ? reportById(a.entityId)?.code : undefined }));
+  if (q.withTotal) {
+    const all = q.entityId ? db.audit.filter(a => a.entityId === q.entityId) : db.audit.filter(a => a.at >= from && a.at <= to);
+    const system = all.filter(a => a.actorId === 'system').length;
+    return { total, system, byUsers: total - system, people: new Set(all.filter(a => a.actorId !== 'system').map(a => a.actorId)).size, rows: out };
+  }
+  return out;
 }));
 
 app.put('/api/settings', wrap(req => {

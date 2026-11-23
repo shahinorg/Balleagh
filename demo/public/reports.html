@@ -67,7 +67,7 @@
   </main>
 </div>
 <script type="module">
-import { api, meta, useUser, esc, fmt, dur, dt, toast, brandHtml, mountNav, bandBadge, statusBadge, priorityBadge, catAr, statusAr, priorityAr, BAND_COLOR, BAND_AR, STATUS_COLOR } from '/js/common.js';
+import { api, meta, useUser, esc, fmt, dur, dt, toast, brandHtml, mountNav, bandBadge, statusBadge, priorityBadge, catAr, statusAr, priorityAr, BAND_COLOR, BAND_AR, STATUS_COLOR, ACTION_AR, ROLE_AR } from '/js/common.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('reports');
 const USER = localStorage.getItem('ballegh:ops') || 'ops-sup';
@@ -92,6 +92,7 @@ const REPORTS = [
     ['overdue', 'البلاغات المتأخرة', 'تجاوزت مدة الحل الآن'],
     ['rejections', 'البلاغات المرفوضة', 'الأسباب ونتائج المراجعة'],
     ['log', 'سجل البلاغات التفصيلي', 'كل البلاغات بكل الحقول'],
+    ['audit', 'سجل التدقيق', 'كل الإجراءات وسلامة السلسلة'],
   ]],
 ];
 document.getElementById('side').innerHTML = REPORTS.map(([g, items]) => `<h6>${g}</h6>${items.map(([k, t, s]) => `<a href="#${k}" data-k="${k}"><b>${t}</b><span>${s}</span></a>`).join('')}`).join('');
@@ -158,6 +159,7 @@ document.getElementById('out').addEventListener('click', e => {
   document.querySelector(`#tbl th[data-i="${th.dataset.i}"]`).dataset.dir = dir === 1 ? 'asc' : 'desc';
 });
 
+let auditKind = '', auditQ = '';
 const views = {
   async summary() {
     const k = await getKpis(); const o = k.overall;
@@ -241,6 +243,53 @@ const views = {
         { t: 'رقم البلاغ', v: r => r.code, h: r => `<a href="/report.html?id=${r.id}" target="_blank" class="num">${esc(r.code)}</a>` }, { t: 'التاريخ', v: r => dt(r.createdAt), s: r => r.createdAt }, { t: 'التصنيف', v: r => catAr(r.category) }, { t: 'الوحدة', v: r => r.unitName },
         { t: 'السبب', v: r => r.rejectReason }, { t: 'عينة', v: r => r.sampled ? 'نعم' : '' }, { t: 'نتيجة المراجعة', v: r => r.rejectConfirmed ? 'مؤكَّد' : r.rejectOverridden ? 'تم النقض' : 'بانتظار', h: r => r.rejectConfirmed ? '<span class="badge plain" style="background:#E7F6EC;color:#15803D">مؤكَّد</span>' : r.rejectOverridden ? '<span class="badge plain" style="background:#FDECEC;color:#B91C1C">تم النقض</span>' : '<span class="badge plain" style="background:#FEF3C7;color:#92400E">بانتظار</span>' },
       ], list.sort((a, b) => b.createdAt - a.createdAt));
+  },
+  async audit() {
+    const [a, b] = range();
+    const [v, res] = await Promise.all([api('/api/audit/verify'), api(`/api/audit?from=${a}&to=${b}&limit=3000&withTotal=1`)]);
+    const EXTRA = { settings_updated: 'تعديل الإعدادات', content_updated: 'تعديل محتوى الموقع', categories_updated: 'تعديل التصنيفات', user_created: 'إضافة مستخدم', user_updated: 'تعديل مستخدم', unit_updated: 'تعديل وحدة', reports_exported: 'تصدير بلاغات' };
+    const label = x => ACTION_AR[x] || EXTRA[x] || x;
+    const ENT = { report: 'بلاغ', settings: 'الإعدادات', content: 'محتوى الموقع', categories: 'التصنيفات', user: 'مستخدم', unit: 'وحدة محلية', export: 'تصدير' };
+    const kind = auditKind, q = auditQ.trim();
+    const rows = res.rows.slice().reverse().filter(r =>
+      (!kind || (kind === 'system' ? r.actorId === 'system' : kind === 'admin' ? r.entity !== 'report' : r.entity === 'report' && r.actorId !== 'system')) &&
+      (!q || [r.reportCode, r.actorName, label(r.action), r.note].some(x => String(x || '').includes(q))));
+    const ok = v.ok
+      ? `<div class="hint" style="margin-bottom:14px;background:#E7F6EC;border-color:#BBE5C8;color:#14532D">✓ سلسلة البصمات سليمة — ${fmt(v.rows)} إجراء مسجّل منذ البداية، ولم يُعدَّل أو يُحذف أي سجل.<div class="tiny" style="margin-top:4px;opacity:.85">كل إجراء مربوط بالإجراء اللي قبله ببصمة SHA-256؛ أي تعديل في سجل قديم بيكسر السلسلة ويظهر هنا.</div></div>`
+      : `<div class="danger-note" style="margin-bottom:14px">✗ تم اكتشاف تلاعب عند السجل رقم ${v.brokenAt}</div>`;
+    const controls = `<div class="row wrap no-print" style="margin-bottom:12px">
+        <select class="input" id="aKind" style="width:auto;padding:7px 10px;font-size:13px">
+          <option value="">كل الإجراءات</option>
+          <option value="user" ${kind === 'user' ? 'selected' : ''}>إجراءات المستخدمين على البلاغات</option>
+          <option value="system" ${kind === 'system' ? 'selected' : ''}>تلقائية من النظام</option>
+          <option value="admin" ${kind === 'admin' ? 'selected' : ''}>إعدادات ومستخدمين وتصدير</option>
+        </select>
+        <input class="input" id="aQ" placeholder="بحث برقم البلاغ أو المستخدم أو الإجراء…" value="${esc(q)}" style="max-width:320px;padding:7px 10px;font-size:13px">
+        <span class="tiny muted">${res.total > res.rows.length ? `بيعرض آخر ${fmt(res.rows.length)} من ${fmt(res.total)} إجراء — ضيّق الفترة لعرض الأقدم` : ''}</span>
+      </div>`;
+    const html = head('سجل التدقيق') + ok +
+      tiles([['إجراءات في الفترة', fmt(res.total)], ['تلقائية من النظام', fmt(res.system)], ['بواسطة المستخدمين', fmt(res.byUsers)], ['مستخدمين مختلفين', fmt(res.people)]]) +
+      controls +
+      table([
+        { t: '#', v: r => r.id, s: r => r.id },
+        { t: 'الوقت', v: r => dt(r.at), s: r => r.at },
+        { t: 'بواسطة', v: r => r.actorName || '—' },
+        { t: 'الدور', v: r => ROLE_AR[r.actorRole] || (r.actorId === 'system' ? 'النظام' : '') },
+        { t: 'الإجراء', v: r => label(r.action) },
+        { t: 'على', v: r => r.entity === 'report' ? (r.reportCode || 'بلاغ') : (ENT[r.entity] || r.entity),
+          h: r => r.entity === 'report' && r.reportCode ? `<a href="/report.html?id=${r.entityId}" target="_blank" class="num">${esc(r.reportCode)}</a>` : esc(ENT[r.entity] || r.entity) },
+        { t: 'ملاحظة', v: r => r.note || '' },
+        { t: 'البصمة', v: r => r.hash.slice(0, 12), h: r => `<span class="num tiny muted" dir="ltr" style="font-family:monospace">${r.hash.slice(0, 12)}…</span>` },
+      ], rows.slice(0, 800));
+    setTimeout(() => {
+      document.getElementById('aKind')?.addEventListener('change', e => { auditKind = e.target.value; run(); });
+      let t;
+      document.getElementById('aQ')?.addEventListener('input', e => {
+        clearTimeout(t);
+        t = setTimeout(async () => { auditQ = e.target.value; await run(); const i = document.getElementById('aQ'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 350);
+      });
+    });
+    return html;
   },
   async log() {
     const list = (await getReports()).sort((a, b) => b.createdAt - a.createdAt);
