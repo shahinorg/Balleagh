@@ -55,7 +55,6 @@
 <header class="topbar">
   <span id="brand"></span>
   <span class="spacer"></span>
-  <select class="input" id="role" style="width:auto"><option value="ops-sup">مشرف الغرفة</option><option value="ops-rev">مراجع الغرفة (قراءة فقط)</option></select>
 </header>
 <div class="shell">
   <aside class="side" id="side"></aside>
@@ -66,8 +65,7 @@ import { api, meta, useUser, toast, esc, fmt, dt, modal, brandHtml, mountNav, RO
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('admin');
 let userId = localStorage.getItem('ballegh:ops') || 'ops-sup';
-const roleSel = document.getElementById('role'); roleSel.value = userId; useUser(userId);
-roleSel.onchange = () => { userId = roleSel.value; localStorage.setItem('ballegh:ops', userId); useUser(userId); paintRo(); };
+useUser(userId); // role comes from the account (see account menu)
 const paintRo = () => document.body.classList.toggle('ro', userId !== 'ops-sup');
 
 let M, geo, content;

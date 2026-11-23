@@ -31,6 +31,10 @@
   .fbar .fields .input { width:auto; padding:7px 10px; font-size:13px; }
   .fbar .fields input.input[type=search] { min-width:230px; }
   .fbar .count { font-size:13px; color:var(--muted); margin-inline-start:auto; }
+  .who-pick { display:flex; align-items:center; gap:8px; padding-inline-end:10px; margin-inline-end:4px; border-inline-end:1px solid var(--border); }
+  .who-pick span { font-size:12px; color:var(--muted); white-space:nowrap; }
+  .who-pick em { font-style:normal; font-size:11px; font-weight:600; color:var(--gold-700); background:var(--gold-50); border:1px solid #F8DDA5; padding:0 7px; border-radius:999px; }
+  .who-pick select { max-width:280px; }
   /* 3. list + detail */
   .layout { flex:1; display:grid; grid-template-columns:420px 1fr; min-height:0; }
   .col { background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; min-height:0; }
@@ -45,13 +49,12 @@
   <span id="brand"></span>
   
   <span class="spacer"></span>
-  <label class="small muted">الحساب (للعرض):</label>
-  <select class="input" id="who" style="width:auto;max-width:340px"></select>
 </header>
 <section class="summary" id="summary"></section>
 <section class="fbar" aria-label="فلاتر البلاغات">
   <div class="status" id="tabs"></div>
   <div class="fields">
+    <label class="who-pick" title="في النظام الفعلي كل رئيس وحدة يدخل بحسابه ويرى وحدته فقط"><span>عرض بوابة وحدة <em>للعرض</em></span><select class="input" id="who"></select></label>
     <input class="input" type="search" id="q" placeholder="بحث برقم البلاغ أو القرية…">
     <select class="input" id="village"><option value="">كل القرى</option></select>
     <select class="input" id="category"><option value="">كل التصنيفات</option></select>

@@ -172,3 +172,6 @@ textarea.input { min-height:84px; resize:vertical; line-height:1.7; }
 .topbar > .spacer { flex-shrink:1; min-width:0; }
 .topbar .seg button, .topbar .btn { white-space:nowrap; }
 @media (max-width:1500px) { .topbar .brand small { display:none; } }
+.uhead .urole { color:var(--primary); font-weight:500; }
+button.uitem { width:100%; border:0; background:none; cursor:pointer; font:inherit; text-align:right; }
+.demo-tag { margin-inline-start:auto; font-size:11px; font-weight:600; color:var(--gold-700); background:var(--gold-50); border:1px solid #F8DDA5; padding:1px 8px; border-radius:999px; }

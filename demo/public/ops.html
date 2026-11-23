@@ -45,7 +45,6 @@
   
   <span class="spacer"></span>
   <div class="seg" id="period"><button data-d="7">7 أيام</button><button data-d="30" class="on">30 يوم</button><button data-d="60">60 يوم</button></div>
-  <select class="input" id="role" style="width:auto"><option value="ops-sup">مشرف الغرفة</option><option value="ops-rev">مراجع الغرفة</option></select>
   <button class="icon-btn" id="sound" title="صوت التنبيه"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6"/></svg></button>
   <button class="icon-btn" id="pilotBtn" title="المنطقة التجريبية: بني صالح وزاوية الكرادسة + السيليين" style="color:#D98A0C;font-size:18px">★</button>
   <button class="btn secondary sm" id="social" title="إدخال بلاغ من السوشيال ميديا">+ سوشيال</button>
@@ -94,8 +93,7 @@ document.getElementById('brand').innerHTML = brandHtml(); mountNav('ops');
 const M = await meta();
 let userId = localStorage.getItem('ballegh:ops') || 'ops-sup';
 useUser(userId);
-document.getElementById('role').value = userId;
-document.getElementById('role').onchange = e => { userId = e.target.value; localStorage.setItem('ballegh:ops', userId); useUser(userId); toast(`الدور الحالي: ${e.target.selectedOptions[0].text}`); };
+// role comes from the account (see account menu)
 
 let days = 30, reports = [], kpis = null, geo = null, selected = null, sound = true, colorMode = 'status';
 const OPEN = ['NEW', 'ROUTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'PENDING_BUDGET', 'PARTIALLY_RESOLVED', 'REOPENED', 'NOT_COMPETENT', 'OPS_QUEUE'];

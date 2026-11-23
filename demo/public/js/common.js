@@ -190,6 +190,13 @@ async function mountUserMenu(bar) {
   try { s = await fetch('/api/staff/session', { cache: 'no-store' }).then(r => r.json()); } catch {}
   const name = s.user || 'موظف';
   const until = s.expiresAt ? new Date(s.expiresAt).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : null;
+  // The role belongs to the account, so it is shown here — not as a switch in the top bar.
+  // In the demo one login stands in for every role; the switch below is labelled as a demo aid.
+  const page = location.pathname.replace(/\.html$/, '');
+  const opsPage = /^\/(ops|admin|map|reports|presentation)$/.test(page);
+  const opsRole = (() => { try { return localStorage.getItem('ballegh:ops') || 'ops-sup'; } catch { return 'ops-sup'; } })();
+  const roleLabel = page === '/governor' ? 'المحافظ' : page === '/unit' ? 'رئيس وحدة محلية' : opsRole === 'ops-rev' ? 'مراجع غرفة العمليات' : 'مشرف غرفة العمليات';
+  const switchTo = opsRole === 'ops-rev' ? ['ops-sup', 'مشرف الغرفة'] : ['ops-rev', 'مراجع الغرفة'];
   const wrap = document.createElement('div');
   wrap.className = 'umenu';
   wrap.innerHTML = `
@@ -199,8 +206,9 @@ async function mountUserMenu(bar) {
       ${SVG('<path d="m6 9 6 6 6-6"/>')}
     </button>
     <div class="udrop" role="menu" hidden>
-      <div class="uhead"><span class="av lg">${esc(name.trim().charAt(0).toUpperCase())}</span><div><b>${esc(name)}</b><span>${s.required ? 'حساب الموظفين' : 'وضع التطوير المحلي'}</span></div></div>
+      <div class="uhead"><span class="av lg">${esc(name.trim().charAt(0).toUpperCase())}</span><div><b>${esc(name)}</b><span class="urole">${roleLabel}</span></div></div>
       ${until ? `<div class="uinfo">${SVG('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}<span>الجلسة سارية حتى <b class="num">${until}</b></span></div>` : ''}
+      ${opsPage ? `<button class="uitem" type="button" role="menuitem" data-switch="${switchTo[0]}">${SVG('<path d="M7 7h11l-3-3M17 17H6l3 3"/>')}التبديل إلى ${switchTo[1]} <span class="demo-tag">للعرض</span></button>` : ''}
       <a class="uitem" role="menuitem" href="/demo.html">${SVG('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')}كل الشاشات</a>
       <a class="uitem" role="menuitem" href="/" target="_blank">${SVG('<path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>')}الموقع العام</a>
       ${s.required ? `<div class="usep"></div><a class="uitem danger" role="menuitem" href="/api/staff/logout">${SVG('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>')}تسجيل الخروج</a>` : ''}
@@ -209,6 +217,10 @@ async function mountUserMenu(bar) {
   const btn = wrap.querySelector('.ubtn'), drop = wrap.querySelector('.udrop');
   const set = open => { drop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); wrap.classList.toggle('open', open); };
   btn.addEventListener('click', e => { e.stopPropagation(); set(drop.hidden); });
+  wrap.querySelector('[data-switch]')?.addEventListener('click', e => {
+    try { localStorage.setItem('ballegh:ops', e.currentTarget.dataset.switch); } catch {}
+    location.reload();
+  });
   document.addEventListener('click', e => { if (!wrap.contains(e.target)) set(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
 }
