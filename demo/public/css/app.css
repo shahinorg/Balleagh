@@ -185,3 +185,58 @@ button.uitem { width:100%; border:0; background:none; cursor:pointer; font:inher
   .snav a { padding:6px 10px; font-size:13px; }
   .seg button { min-height:32px; }
 }
+
+/* ---------- Motion ---------- */
+:root { --ease-out:cubic-bezier(.22,1,.36,1); --ease-spring:cubic-bezier(.34,1.56,.64,1); }
+@view-transition { navigation:auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration:.22s; animation-timing-function:var(--ease-out); }
+.topbar { view-transition-name:topbar; }
+
+/* reveal on first appearance (stagger via --i, set in common.js) */
+.rv-wait { opacity:0; }
+.rv { animation:rise .5s var(--ease-out) both; animation-delay:calc(var(--i,0) * 45ms); }
+@keyframes rise { from { opacity:0; transform:translateY(12px) scale(.985); } to { opacity:1; transform:none; } }
+.scr-in { animation:scrin .32s var(--ease-out) both; }
+@keyframes scrin { from { opacity:0; transform:translateX(-14px); } }
+
+/* micro-interactions */
+.btn { transition:background .18s, color .18s, border-color .18s, box-shadow .2s, transform .12s var(--ease-out); }
+.btn:not(:disabled):hover { box-shadow:0 4px 14px rgb(24 117 53/.18); }
+.btn.ghost:not(:disabled):hover, .btn.secondary:not(:disabled):hover { box-shadow:none; }
+.btn:not(:disabled):active { transform:scale(.97); }
+.icon-btn { transition:background .15s, border-color .15s, transform .12s var(--ease-out); }
+.icon-btn:active { transform:scale(.92); }
+.input, select.input, textarea.input { transition:border-color .18s, box-shadow .2s; }
+.snav a { transition:background .18s, color .18s; }
+.kpi, .card, .stat { transition:border-color .2s, box-shadow .25s var(--ease-out), transform .25s var(--ease-out); }
+.kpi:hover { border-color:#BFD8C7; box-shadow:0 6px 18px rgb(14 74 33/.08); }
+a.card:hover, .card.click:hover, .stat:hover { transform:translateY(-2px); box-shadow:var(--sh-md); }
+.kpi .v.bump { animation:bump .6s var(--ease-out); }
+@keyframes bump { 30% { color:var(--primary); transform:scale(1.06); } }
+.kpi .v { display:inline-block; transform-origin:right center; }
+.bar-row i { animation:grow .8s var(--ease-out) both; transform-origin:right center; }
+@keyframes grow { from { transform:scaleX(0); } }
+.ubtn[aria-expanded="true"] svg, .ubtn.open svg { transform:rotate(180deg); }
+
+/* overlays */
+.modal-bg { animation:fadein .18s ease-out; }
+.modal-bg .modal { animation:pop .26s var(--ease-spring); }
+.modal-bg.out { animation:fadeout .16s ease-in forwards; }
+.modal-bg.out .modal { animation:popout .16s ease-in forwards; }
+@keyframes fadein { from { opacity:0; } }
+@keyframes fadeout { to { opacity:0; } }
+@keyframes pop { from { opacity:0; transform:translateY(10px) scale(.96); } }
+@keyframes popout { to { opacity:0; transform:translateY(6px) scale(.97); } }
+.toast { animation:tin .32s var(--ease-spring); }
+.toast.out { animation:tout .25s ease-in forwards; }
+@keyframes tout { to { opacity:0; transform:translateY(8px) scale(.96); } }
+
+/* skeleton shimmer for loading placeholders */
+.skel { background:linear-gradient(90deg,var(--surface-2) 25%,#EEF3EF 50%,var(--surface-2) 75%); background-size:200% 100%; animation:shimmer 1.3s linear infinite; border-radius:8px; color:transparent !important; }
+@keyframes shimmer { to { background-position:-200% 0; } }
+
+@media (prefers-reduced-motion:reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-delay:0s !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  .rv-wait { opacity:1; }
+  @view-transition { navigation:none; }
+}

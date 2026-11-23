@@ -80,7 +80,7 @@ let M, user = getUser('citizen');
 const draft = { category: null, files: [], description: '', answers: {}, audio: null, loc: null, locInfo: null, gps: null };
 const QUEUE_KEY = 'ballegh:queue';
 
-function render(html) { $app.innerHTML = html; $app.scrollTop = 0; }
+function render(html) { $app.innerHTML = html; $app.scrollTop = 0; $app.classList.remove('scr-in'); void $app.offsetWidth; $app.classList.add('scr-in'); }
 function appbar(title, back) { return `<div class="appbar">${back ? `<button class="icon-btn" data-back aria-label="رجوع">${icon('back', 20)}</button>` : ''}<h1>${esc(title)}</h1><span class="spacer"></span></div>`; }
 $app.addEventListener('click', e => { if (e.target.closest('[data-back]')) history.back(); });
 

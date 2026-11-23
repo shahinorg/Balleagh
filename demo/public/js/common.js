@@ -90,6 +90,7 @@ export function toast(msg, type = '') {
   if (!box) { box = document.createElement('div'); box.id = 'toasts'; document.body.appendChild(box); }
   const t = document.createElement('div');
   t.className = `toast ${type}`; t.textContent = msg; box.appendChild(t);
+  setTimeout(() => t.classList.add('out'), 3900);
   setTimeout(() => t.remove(), 4200);
 }
 
@@ -99,7 +100,7 @@ export function modal({ title, body, actions = [] }) {
     bg.className = 'modal-bg';
     bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><header><h3>${esc(title)}</h3><span class="spacer"></span><button class="icon-btn" data-x aria-label="إغلاق">✕</button></header><div class="body">${body}</div><footer></footer></div>`;
     const footer = bg.querySelector('footer');
-    const close = v => { bg.remove(); resolve(v); };
+    const close = v => { if (bg.classList.contains('out')) return; bg.classList.add('out'); setTimeout(() => bg.remove(), REDUCED ? 0 : 160); resolve(v); };
     actions.forEach(a => {
       const b = document.createElement('button');
       b.className = `btn ${a.cls || ''}`; b.textContent = a.label;
@@ -223,4 +224,64 @@ async function mountUserMenu(bar) {
   });
   document.addEventListener('click', e => { if (!wrap.contains(e.target)) set(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
+}
+
+// ---------- Motion: reveal on first appearance + animated numbers ----------
+const REDUCED = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const RV_SEL = '.kpi, .card, .stat, .role, .step, .tile';
+const NUM_SEL = '.kpi .v, .stat b, .tiles > div > b';
+const seenParents = new WeakSet();
+const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return; io.unobserve(e.target);
+  e.target.classList.remove('rv-wait'); e.target.classList.add('rv');
+  const done = () => { e.target.classList.remove('rv'); e.target.style.removeProperty('--i'); };
+  e.target.addEventListener('animationend', done, { once: true });
+  setTimeout(done, 1400 + (Number(e.target.style.getPropertyValue('--i')) || 0) * 45);
+}), { rootMargin: '0px 0px -30px 0px' }) : null;
+
+function reveal(nodes) {
+  if (REDUCED || !io) return;
+  const groups = new Map();
+  nodes.forEach(n => { const p = n.parentElement; if (!p || seenParents.has(p) || n.closest('.modal-bg, #toasts, .maplibregl-map')) return; (groups.get(p) || groups.set(p, []).get(p)).push(n); });
+  groups.forEach((list, p) => {
+    seenParents.add(p);
+    list.slice(0, 16).forEach((n, i) => { n.style.setProperty('--i', i); n.classList.add('rv-wait'); io.observe(n); });
+  });
+  setTimeout(() => document.querySelectorAll('.rv-wait').forEach(n => { n.classList.remove('rv-wait'); io.unobserve(n); }), 3000);
+}
+
+const lastNum = new Map();
+const NUM_RE = /-?\d[\d,]*(?:\.\d+)?/;
+function numKey(el) {
+  const box = el.closest('.kpi, .stat, .tiles > div') || el;
+  const label = (box.querySelector('.l, span')?.textContent || '').trim();
+  const host = box.parentElement?.id || box.parentElement?.className || '';
+  return host + '|' + label;
+}
+function countUp(el) {
+  const txt = el.textContent, m = txt.match(NUM_RE); if (!m) return;
+  const to = Number(m[0].replace(/,/g, '')); if (!Number.isFinite(to)) return;
+  const key = numKey(el), from = lastNum.has(key) ? lastNum.get(key) : 0; lastNum.set(key, to);
+  if (REDUCED || from === to || document.hidden) return;
+  const dec = (m[0].split('.')[1] || '').length, comma = m[0].includes(',') || Math.abs(to) >= 1000;
+  const pre = txt.slice(0, m.index), post = txt.slice(m.index + m[0].length);
+  const f = v => pre + (comma ? v.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) : v.toFixed(dec)) + post;
+  const t0 = performance.now(), D = from ? 600 : 900;
+  if (from) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  const tick = now => { const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3); el.textContent = f(from + (to - from) * e); if (k < 1 && el.isConnected) requestAnimationFrame(tick); else el.textContent = txt; };
+  el.textContent = f(from); requestAnimationFrame(tick);
+  setTimeout(() => { if (el.textContent !== txt) el.textContent = txt; }, D + 150);
+}
+
+function scan(root) {
+  if (root.nodeType !== 1) return;
+  const rv = root.matches(RV_SEL) ? [root] : []; rv.push(...root.querySelectorAll(RV_SEL)); reveal(rv);
+  (root.matches(NUM_SEL) ? [root] : []).concat([...root.querySelectorAll(NUM_SEL)]).forEach(countUp);
+}
+if (typeof document !== 'undefined') {
+  const start = () => {
+    scan(document.body);
+    new MutationObserver(ms => { for (const m of ms) m.addedNodes.forEach(scan); }).observe(document.body, { childList: true, subtree: true });
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
 }
