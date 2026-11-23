@@ -383,6 +383,20 @@ const sock = io();
 sock.on('report:new', r => { reports.push(r); refresh(); });
 sock.on('report:update', r => { const i = reports.findIndex(x => x.id === r.id); if (i >= 0) reports[i] = r; refresh(); });
 refresh();
+
+// deep link from the reports list: /map.html?report=<id>
+const focusId = new URLSearchParams(location.search).get('report');
+if (focusId) {
+  const r = reports.find(x => x.id === focusId) || await api('/api/reports/' + encodeURIComponent(focusId)).catch(() => null);
+  if (!r) toast('البلاغ مش موجود', 'err');
+  else {
+    if (!reports.some(x => x.id === r.id)) { reports.push(r); refresh(); }
+    new maplibregl.Marker({ color: '#F4A21D' }).setLngLat(r.location).addTo(map);
+    await mapReady(map);
+    map.flyTo({ center: r.location, zoom: 16, duration: 1600, offset: [0, Math.min(220, map.getContainer().clientHeight * 0.28)] });
+    map.once('moveend', () => setTimeout(() => identify({ lngLat: { lng: r.location[0], lat: r.location[1] }, point: map.project(r.location) }), 300));
+  }
+}
 </script>
 </body>
 </html>

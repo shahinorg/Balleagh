@@ -50,6 +50,11 @@
   .rl td.c-loc { min-width:110px; }
   .src { font-size:11px; padding:1px 8px; border-radius:999px; background:#EEF2FF; color:#4338CA; margin-inline-start:4px; }
   .dup { font-size:11px; padding:1px 7px; border-radius:999px; background:var(--gold-50); color:#7A4B00; }
+  .rl th.c-go { cursor:default; width:1%; }
+  .rl td.c-go { width:1%; padding-inline:6px 12px; }
+  .golink { width:36px; height:36px; display:inline-grid; place-items:center; border-radius:10px; color:var(--primary); border:1px solid var(--border); background:var(--surface); transition:background .15s, border-color .15s, color .15s, transform .12s; }
+  .golink:hover { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .golink:active { transform:scale(.92); }
   .empty { padding:50px 16px; text-align:center; color:var(--muted); }
 
   .pager { display:flex; align-items:center; gap:8px; padding:10px 12px; font-size:13px; color:var(--muted); border-top:1px solid var(--border); }
@@ -80,7 +85,7 @@
     .rl .c-cat { grid-column:1 / -1; } .rl .c-code { order:-1; } .rl .c-st { justify-self:end; order:-1; }
     .rl .c-unit, .rl .c-when { display:none; }
     .rl .c-loc { grid-column:1 / -1; font-size:13px; }
-    .rl .c-pr { order:5; } .rl .c-sla { grid-column:1 / -1; order:6; }
+    .rl .c-pr { order:5; } .rl .c-go { order:5; justify-self:end; padding:0; } .rl .c-sla { grid-column:1 / -1; order:6; }
   }
 </style>
 </head>
@@ -114,8 +119,9 @@
         <th data-s="priority" class="c-pr">الأولوية<span class="ar">↕</span></th>
         <th data-s="due" class="c-sla">مدة الحل<span class="ar">↕</span></th>
         <th data-s="createdAt" class="c-when">التاريخ<span class="ar">↕</span></th>
+        <th class="c-go" aria-label="الخريطة"></th>
       </tr></thead>
-      <tbody id="rows"><tr><td colspan="8" class="empty">جاري التحميل…</td></tr></tbody>
+      <tbody id="rows"><tr><td colspan="9" class="empty">جاري التحميل…</td></tr></tbody>
     </table>
     <div class="pager" id="pager"></div>
   </div>
@@ -140,6 +146,7 @@ const $ = id => document.getElementById(id);
 const OPEN = ['NEW', 'ROUTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'PENDING_BUDGET', 'PARTIALLY_RESOLVED', 'REOPENED', 'NOT_COMPETENT', 'OPS_QUEUE'];
 const PRIO_RANK = { CRITICAL: 0, URGENT: 1, NORMAL: 2, LOW: 3 };
 const PAGE = 50;
+const PIN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>';
 
 const TABS = [
   ['all', 'الكل', () => true],
@@ -200,7 +207,8 @@ function render() {
       <td class="c-pr">${priorityBadge(r.priority)}</td>
       <td class="c-sla">${slaBar(r) || '<span class="muted tiny">—</span>'}</td>
       <td class="c-when" title="${esc(dt(r.createdAt))}">${esc(ago(r.createdAt))}</td>
-    </tr>`).join('') : `<tr><td colspan="8" class="empty">مفيش بلاغات مطابقة للفلاتر دي.</td></tr>`;
+      <td class="c-go"><a class="golink" href="/map.html?report=${encodeURIComponent(r.id)}" title="اذهب للخريطة" aria-label="اذهب للخريطة — ${esc(r.code)}">${PIN}</a></td>
+    </tr>`).join('') : `<tr><td colspan="9" class="empty">مفيش بلاغات مطابقة للفلاتر دي.</td></tr>`;
   $('pager').innerHTML = `<span>عرض ${fmt(list.length ? page * PAGE + 1 : 0)}–${fmt(Math.min(list.length, (page + 1) * PAGE))} من ${fmt(list.length)}</span><span class="spacer"></span>
     <button class="btn ghost sm" data-p="-1" ${page === 0 ? 'disabled' : ''}>السابق</button><span class="num">${page + 1} / ${pages}</span><button class="btn ghost sm" data-p="1" ${page >= pages - 1 ? 'disabled' : ''}>التالي</button>`;
   render.list = list;
@@ -215,7 +223,7 @@ $('days').onchange = () => { page = 0; load(); };
 $('clear').onclick = () => { ['q', 'center', 'category', 'priority', 'source'].forEach(id => $(id).value = ''); fillUnits(); tab = 'all'; page = 0; render(); };
 document.querySelector('.rl thead').onclick = e => { const th = e.target.closest('th[data-s]'); if (!th) return; const k = th.dataset.s; sort = sort.k === k ? { k, dir: -sort.dir } : { k, dir: k === 'createdAt' ? -1 : 1 }; render(); };
 $('pager').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; page += Number(b.dataset.p); render(); document.querySelector('.tablebox').scrollIntoView({ block: 'start', behavior: 'smooth' }); };
-$('rows').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) openReport(tr.dataset.id); };
+$('rows').onclick = e => { if (e.target.closest('a')) return; const tr = e.target.closest('tr[data-id]'); if (tr) openReport(tr.dataset.id); };
 
 // drawer
 async function openReport(id) {
@@ -250,7 +258,8 @@ async function openReport(id) {
     ${r.rejection ? `<div><h4>سبب الرفض</h4><div class="small">${esc(r.rejection.reason || '')}</div></div>` : ''}
     <div><h4>السجل الزمني</h4>${timeline(r.events || [])}</div>`;
   $('dActs').innerHTML = `<a class="btn sm" href="/report.html?id=${encodeURIComponent(r.id)}" target="_blank">تقرير رسمي PDF</a>
-    <a class="btn ghost sm" href="https://www.google.com/maps?q=${r.location[1]},${r.location[0]}" target="_blank" rel="noopener">الموقع على الخريطة</a>`;
+    <a class="btn secondary sm" href="/map.html?report=${encodeURIComponent(r.id)}">${PIN} اذهب للخريطة</a>
+    <a class="btn ghost sm" href="https://www.google.com/maps?q=${r.location[1]},${r.location[0]}" target="_blank" rel="noopener">Google Maps</a>`;
 }
 function closeDrawer() {
   selected = null;
