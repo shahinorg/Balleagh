@@ -37,6 +37,10 @@ export async function api(url, { method = 'GET', body, form } = {}) {
   else if (body !== undefined) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
   const res = await fetch(url, { method, headers, body: payload });
   const data = await res.json().catch(() => ({}));
+  // staff session expired / not logged in → go to the login page (citizen pages never need it)
+  if (res.status === 401 && data.login && !/^\/(citizen|index)?(\.html)?$/.test(location.pathname)) {
+    location.href = `/login.html?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`;
+  }
   if (!res.ok) throw new Error(data.error || `خطأ ${res.status}`);
   return data;
 }
@@ -168,7 +172,7 @@ const NAV = [
   ['admin', '/admin.html', 'الإعدادات'],
 ];
 export function navHtml(active) {
-  return `<nav class="snav" aria-label="التنقل">${NAV.map(([k, href, t]) => `<a href="${href}" class="${k === active ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
+  return `<nav class="snav" aria-label="التنقل">${NAV.map(([k, href, t]) => `<a href="${href}" class="${k === active ? 'on' : ''}">${t}</a>`).join('')}<a href="/api/staff/logout" class="out" title="تسجيل الخروج">خروج</a></nav>`;
 }
 export function mountNav(active) {
   const bar = document.querySelector('.topbar');

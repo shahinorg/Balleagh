@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>بلّغ — دخول الموظفين</title>
+<link rel="icon" href="/brand/ballegh-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="/css/app.css" rel="stylesheet">
+<style>
+  body { min-height:100vh; display:grid; grid-template-columns:1fr 1fr; background:var(--bg); }
+  @media (max-width:860px) { body { grid-template-columns:1fr; } .side { display:none !important; } }
+  .side { background:linear-gradient(160deg,#187535,#0E4A21); color:#fff; display:flex; flex-direction:column; justify-content:space-between; padding:40px; }
+  .side .gov { height:84px; width:fit-content; background:#fff; border-radius:16px; padding:8px; }
+  .side h2 { font-size:34px; margin:0 0 10px; line-height:1.3; }
+  .side p { margin:0; opacity:.85; line-height:1.9; max-width:440px; }
+  .side ul { margin:18px 0 0; padding:0; list-style:none; display:grid; gap:8px; opacity:.9; font-size:14px; }
+  .side li::before { content:'✓  '; color:var(--gold-500); font-weight:700; }
+  .side small { opacity:.6; font-size:12px; }
+  main { display:grid; place-items:center; padding:24px 16px; }
+  form { width:min(400px,100%); display:grid; gap:14px; }
+  .logo { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .logo img { width:52px; }
+  .logo b { font-size:30px; color:var(--green-500); line-height:1; display:block; }
+  .logo span { font-size:13px; color:var(--muted); }
+  h1 { font-size:22px; margin:6px 0 0; }
+  .sub { color:var(--muted); margin:0 0 6px; font-size:14px; }
+  .pw { position:relative; }
+  .pw button { position:absolute; left:8px; top:50%; transform:translateY(-50%); border:0; background:none; cursor:pointer; color:var(--muted); font-size:13px; padding:6px; }
+  .input { height:48px; font-size:16px; }
+  .err { display:none; }
+  .err.show { display:block; }
+  .foot { font-size:13px; color:var(--muted); text-align:center; }
+</style>
+</head>
+<body>
+<aside class="side">
+  <img class="gov" src="/brand/fayoum-governorate-logo.png" alt="محافظة الفيوم">
+  <div>
+    <h2>بوابة الموظفين</h2>
+    <p>غرفة العمليات، والوحدات المحلية، ولوحة المحافظ، والتقارير، والإعدادات — في مكان واحد.</p>
+    <ul><li>متابعة البلاغات لحظياً على الخريطة</li><li>مؤشرات أداء الوحدات المحلية</li><li>سجل تدقيق غير قابل للتعديل</li></ul>
+  </div>
+  <small>ديوان عام محافظة الفيوم · منصة بلّغ</small>
+</aside>
+<main>
+  <form id="f" autocomplete="on" novalidate>
+    <div class="logo"><img src="/brand/ballegh-mark.svg" alt=""><div><b>بلّغ</b><span>منصة بلاغات محافظة الفيوم</span></div></div>
+    <h1>دخول الموظفين</h1>
+    <p class="sub">ادخل اسم المستخدم وكلمة المرور الخاصة بالموظفين.</p>
+    <label class="field"><span>اسم المستخدم</span><input class="input" id="user" name="username" autocomplete="username" dir="ltr" required autofocus></label>
+    <label class="field"><span>كلمة المرور</span><div class="pw"><input class="input" id="password" name="password" type="password" autocomplete="current-password" dir="ltr" required><button type="button" id="show">إظهار</button></div></label>
+    <div class="danger-note err" id="err" role="alert"></div>
+    <button class="btn lg block" id="go" type="submit">دخول</button>
+    <div class="foot"><a href="/">الرجوع للموقع العام</a> · <a href="/citizen.html">تطبيق المواطن</a></div>
+  </form>
+</main>
+<script>
+  const q = new URLSearchParams(location.search);
+  const raw = q.get('next') || '/demo.html';
+  const next = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/api/') ? raw : '/demo.html';
+  const $ = id => document.getElementById(id);
+  fetch('/api/staff/session').then(r => r.json()).then(s => { if (s.loggedIn) location.replace(next); }).catch(() => {});
+  $('show').onclick = () => { const p = $('password'); p.type = p.type === 'password' ? 'text' : 'password'; $('show').textContent = p.type === 'password' ? 'إظهار' : 'إخفاء'; };
+  $('f').onsubmit = async e => {
+    e.preventDefault();
+    const err = $('err'), btn = $('go');
+    err.classList.remove('show');
+    if (!$('user').value.trim() || !$('password').value) { err.textContent = 'ادخل اسم المستخدم وكلمة المرور'; err.classList.add('show'); return; }
+    btn.disabled = true; btn.textContent = 'جاري الدخول…';
+    try {
+      const r = await fetch('/api/staff/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: $('user').value, password: $('password').value }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'تعذّر الدخول');
+      location.replace(next);
+    } catch (x) {
+      err.textContent = x.message; err.classList.add('show');
+      btn.disabled = false; btn.textContent = 'دخول';
+      $('password').select();
+    }
+  };
+</script>
+</body>
+</html>

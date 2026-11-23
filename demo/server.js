@@ -30,15 +30,23 @@ app.use(express.json({ limit: '2mb' }));
 app.set('trust proxy', true);
 
 // ---------- staff access gate ----------
-// When DEMO_PASSWORD is set (on the hosting), staff screens and staff APIs need HTTP Basic auth.
+// When DEMO_PASSWORD is set (on the hosting), staff screens and staff APIs need a staff login:
+// /login.html sets a signed, HttpOnly session cookie (12 h). HTTP Basic auth still works for scripts.
 // The public site, the citizen app and citizen API calls stay open.
 const ACCESS_USER = process.env.DEMO_USER || 'admin';
 const ACCESS_PASS = process.env.DEMO_PASSWORD || '';
+const SESSION_SECRET = crypto.createHash('sha256').update(`ballegh:${process.env.SESSION_SECRET || ''}:${ACCESS_PASS}`).digest();
+const SESSION_MS = 12 * 3_600_000;
+const COOKIE = 'ballegh_staff';
 const STAFF_PAGES = /^\/(ops|unit|governor|admin|map|reports|report|demo)(\.html)?$/;
-const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health']);
-const sameSecret = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health', '/api/staff/login', '/api/staff/logout', '/api/staff/session']);
+const sameSecret = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+const sign = exp => crypto.createHmac('sha256', SESSION_SECRET).update(`${ACCESS_USER}|${exp}`).digest('base64url');
+const cookieOf = (req, name) => (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(([k]) => k === name)?.slice(1).join('=');
 function hasStaffAccess(req) {
   if (!ACCESS_PASS) return true;
+  const c = cookieOf(req, COOKIE);
+  if (c) { const [exp, sig] = c.split('.'); if (Number(exp) > Date.now() && sig && sameSecret(sig, sign(exp))) return true; }
   const h = req.get('authorization') || '';
   if (!h.startsWith('Basic ')) return false;
   const [u, ...p] = Buffer.from(h.slice(6), 'base64').toString('utf8').split(':');
@@ -46,15 +54,42 @@ function hasStaffAccess(req) {
 }
 app.use((req, res, next) => {
   const p = req.path;
-  let needsStaff = STAFF_PAGES.test(p);
+  const isPage = STAFF_PAGES.test(p);
+  let needsStaff = isPage;
   if (!needsStaff && p.startsWith('/api/') && !PUBLIC_API.has(p)) {
     const u = userById(req.get('x-user-id'));
     const citizenCall = u?.role === 'CITIZEN' && (p === '/api/reports' || /^\/api\/reports\/[\w-]+(\/actions\/rate)?$/.test(p));
     needsStaff = !citizenCall;
   }
+  if (needsStaff) res.set('Cache-Control', 'no-store');
   if (!needsStaff || hasStaffAccess(req)) return next();
-  res.set('WWW-Authenticate', 'Basic realm="Ballegh staff", charset="UTF-8"').status(401).send('مطلوب اسم المستخدم وكلمة مرور الموظفين');
+  if (isPage) return res.redirect(302, `/login.html?next=${encodeURIComponent(req.originalUrl)}`);
+  res.status(401).json({ error: 'مطلوب تسجيل دخول الموظفين', login: '/login.html' });
 });
+
+// login with simple brute-force protection: 8 failed attempts per IP per 15 minutes
+const failures = new Map();
+app.post('/api/staff/login', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!ACCESS_PASS) return res.json({ ok: true, open: true });
+  const ip = req.ip || 'x', now = Date.now();
+  const f = (failures.get(ip) || []).filter(t => now - t < 15 * 60_000);
+  if (f.length >= 8) return res.status(429).json({ error: 'محاولات كتير غلط — جرّب تاني بعد ربع ساعة' });
+  const { user, password } = req.body || {};
+  if (!(String(user || '').trim() === ACCESS_USER && sameSecret(password || '', ACCESS_PASS))) {
+    f.push(now); failures.set(ip, f);
+    return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+  }
+  failures.delete(ip);
+  const exp = now + SESSION_MS;
+  const secure = req.secure || req.get('x-forwarded-proto') === 'https';
+  res.set('Set-Cookie', `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MS / 1000}${secure ? '; Secure' : ''}`);
+  res.json({ ok: true });
+});
+app.get('/api/staff/logout', (_req, res) => {
+  res.set('Set-Cookie', `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`).set('Cache-Control', 'no-store').redirect(302, '/login.html');
+});
+app.get('/api/staff/session', (req, res) => res.set('Cache-Control', 'no-store').json({ loggedIn: hasStaffAccess(req), required: !!ACCESS_PASS }));
 
 app.use(express.static(path.join(HERE, 'public'), { extensions: ['html'] }));
 app.use('/uploads', express.static(UPLOADS));
