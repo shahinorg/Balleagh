@@ -14,7 +14,16 @@
   .kbar { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; padding:10px 14px; background:var(--bg); border-bottom:1px solid var(--border); }
   .kbar .kpi { padding:8px 12px; }
   .kbar .kpi .v { font-size:22px; }
-  .main { flex:1; display:grid; grid-template-columns:380px 1fr 250px; min-height:0; }
+  .main { --sbs:380px; --sbe:250px; flex:1; display:grid; grid-template-columns:var(--sbs) 1fr var(--sbe); min-height:0; }
+  .main.sbs-off { --sbs:0px; } .main.sbe-off { --sbe:0px; }
+  @media (min-width:901px) {
+    #right > * { min-width:330px; }
+    .side.left { transition:padding .3s var(--ease-out); }
+    .side.left > * { min-width:222px; }
+    .main.sbs-off > #right, .main.sbe-off > .side.left { visibility:hidden; transition:padding .3s var(--ease-out), visibility 0s .3s; }
+    .main.sbe-off > .side.left { padding-inline:0; border-right-color:transparent; }
+    .main.sbs-off > #right { border-left-color:transparent; }
+  }
   .side { background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; min-height:0; }
   .side.left { border-left:0; border-right:1px solid var(--border); overflow-y:auto; padding:14px; display:grid; align-content:start; gap:14px; }
   .side .head { padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
@@ -35,8 +44,9 @@
   .back { display:flex; align-items:center; gap:6px; border:0; background:none; color:var(--primary); cursor:pointer; font-weight:600; padding:0; }
   .search { margin:8px 8px 0; width:calc(100% - 16px); }
   .newpill { position:absolute; top:12px; right:50%; transform:translateX(50%); z-index:5; background:#16211A; color:#fff; padding:8px 16px; border-radius:999px; font-size:13px; box-shadow:var(--sh-lg); cursor:pointer; }
-  @media (max-width:1200px) { .main { grid-template-columns:340px 1fr; } .side.left { display:none; } .kbar { grid-template-columns:repeat(4,1fr); } }
+  @media (max-width:1200px) { .main { --sbs:340px; grid-template-columns:var(--sbs) 1fr; } .sb-toggle[data-edge="end"] { display:none; } .side.left { display:none; } .kbar { grid-template-columns:repeat(4,1fr); } }
   @media (max-width:900px) {
+    .sb-toggle { display:none; }
     body { height:auto; min-height:100vh; overflow:auto; }
     .kbar { grid-template-columns:repeat(2,minmax(0,1fr)); padding:10px 12px; }
     .main { display:flex; flex-direction:column; }
@@ -90,12 +100,15 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script type="module">
-import { mountNav, api, meta, useUser, toast, esc, ago, fmt, dur, statusBadge, priorityBadge, slaBar, catAr, statusAr, priorityAr, chime, modal, brandHtml, bandBadge, STATUS_COLOR, PRIORITY_COLOR, BAND_COLOR, BAND_AR, dt } from '/js/common.js';
+import { collapsibleSide, mountNav, api, meta, useUser, toast, esc, ago, fmt, dur, statusBadge, priorityBadge, slaBar, catAr, statusAr, priorityAr, chime, modal, brandHtml, bandBadge, STATUS_COLOR, PRIORITY_COLOR, BAND_COLOR, BAND_AR, dt } from '/js/common.js';
 import { icon } from '/js/icons.js';
 import { createMap, setBase, addUnits, addReports, colorPointsBy, reportsToFC, hoverUnits, addPilot } from '/js/map.js';
 import { renderDetail, doAction, askReason } from '/js/detail.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('ops');
+const mainEl = document.querySelector('.main');
+collapsibleSide(mainEl, { key: 'ops-list', edge: 'start', title: 'قائمة البلاغات' });
+collapsibleSide(mainEl, { key: 'ops-tools', edge: 'end', title: 'الطبقات والفلاتر' });
 const M = await meta();
 let userId = localStorage.getItem('ballegh:ops') || 'ops-sup';
 useUser(userId);

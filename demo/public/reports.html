@@ -9,7 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="/css/app.css" rel="stylesheet">
 <style>
-  .shell { display:grid; grid-template-columns:260px 1fr; min-height:calc(100vh - 60px); }
+  .shell { --sbs:260px; display:grid; grid-template-columns:var(--sbs) 1fr; min-height:calc(100vh - 60px); }
+  .shell.sbs-off { --sbs:0px; }
+  @media (min-width:1001px) {
+    .side { transition:padding .3s var(--ease-out); }
+    .side > * { min-width:238px; }
+    .shell.sbs-off > .side { padding-inline:0; border-left-color:transparent; visibility:hidden; transition:padding .3s var(--ease-out), visibility 0s .3s; }
+  }
+  @media (max-width:1000px) { .sb-toggle { display:none; } }
   .side { background:var(--surface); border-left:1px solid var(--border); padding:14px 10px; }
   .side a { display:grid; gap:2px; padding:10px 12px; border-radius:12px; color:var(--text); text-decoration:none; }
   .side a b { font-size:14px; font-weight:500; } .side a span { font-size:12px; color:var(--muted); }
@@ -74,9 +81,10 @@
   </main>
 </div>
 <script type="module">
-import { api, meta, useUser, esc, fmt, dur, dt, toast, brandHtml, mountNav, bandBadge, statusBadge, priorityBadge, catAr, statusAr, priorityAr, BAND_COLOR, BAND_AR, STATUS_COLOR, ACTION_AR, ROLE_AR } from '/js/common.js';
+import { collapsibleSide, api, meta, useUser, esc, fmt, dur, dt, toast, brandHtml, mountNav, bandBadge, statusBadge, priorityBadge, catAr, statusAr, priorityAr, BAND_COLOR, BAND_AR, STATUS_COLOR, ACTION_AR, ROLE_AR } from '/js/common.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('reports');
+collapsibleSide(document.querySelector('.shell'), { key: 'reports', edge: 'start', title: 'قائمة التقارير' });
 const USER = localStorage.getItem('ballegh:ops') || 'ops-sup';
 useUser(USER);
 const M = await meta();

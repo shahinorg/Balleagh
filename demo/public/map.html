@@ -11,7 +11,9 @@
 <link href="/css/app.css" rel="stylesheet">
 <style>
   body { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-  .stage { flex:1; position:relative; min-height:0; }
+  .stage { --sbs:314px; flex:1; position:relative; min-height:0; }
+  .stage.sbs-off { --sbs:0px; }
+  .stage.sb-host > .sb-toggle { top:42px; transform:none; }
   #map { position:absolute; inset:0; }
   .panel { position:absolute; z-index:5; background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--sh-md); }
   .layers { top:12px; right:12px; width:290px; max-height:calc(100% - 24px); overflow-y:auto; padding:12px 14px; }
@@ -43,7 +45,7 @@
   .stats .g span { font-size:11px; color:var(--muted); }
   .mini-bar { display:grid; grid-template-columns:110px 1fr 30px; gap:6px; align-items:center; font-size:12px; margin-top:4px; }
   .mini-bar i { height:7px; border-radius:4px; background:var(--green-500); display:block; }
-  .timebar { bottom:12px; left:12px; right:314px; padding:10px 14px; display:flex; align-items:center; gap:12px; }
+  .timebar { bottom:12px; left:12px; right:max(12px, var(--sbs)); padding:10px 14px; display:flex; align-items:center; gap:12px; }
   .timebar input[type=range] { flex:1; accent-color:var(--primary); }
   .timebar .d { font-weight:600; min-width:150px; text-align:center; font-variant-numeric:tabular-nums; }
   .coords { position:absolute; bottom:70px; right:314px; z-index:4; background:rgb(14 21 17/.75); color:#fff; font-size:11px; padding:3px 8px; border-radius:6px; direction:ltr; font-family:monospace; }
@@ -55,7 +57,12 @@
   .idn h5:first-child { margin-top:0; }
   .idn .it { font-size:13px; }
   .tools button[data-t="layers"] { display:none; }
-  @media (max-width:1000px) { .stats { display:none; } .timebar { right:12px; } .layers { width:240px; } }
+  @media (max-width:1000px) { .stats { display:none; } .stage { --sbs:264px; } .layers { width:240px; } }
+  @media (min-width:761px) {
+    .layers { transition:transform .3s var(--ease-out), opacity .25s, visibility 0s; }
+    .stage.sbs-off .layers { transform:translateX(calc(100% + 24px)); opacity:0; visibility:hidden; transition:transform .3s var(--ease-out), opacity .25s, visibility 0s .3s; }
+  }
+  @media (max-width:760px) { .stage > .sb-toggle { display:none; } }
   @media (max-width:760px) {
     /* phones: layers panel becomes a toggled sheet, search spans the top, time bar compacts */
     .tools button[data-t="layers"] { display:grid; }
@@ -122,11 +129,12 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script type="module">
-import { api, meta, useUser, esc, fmt, dt, ago, statusBadge, priorityBadge, bandBadge, catAr, statusAr, priorityAr, brandHtml, mountNav, toast, STATUS_COLOR, PRIORITY_COLOR, BAND_COLOR, BAND_AR } from '/js/common.js';
+import { collapsibleSide, api, meta, useUser, esc, fmt, dt, ago, statusBadge, priorityBadge, bandBadge, catAr, statusAr, priorityAr, brandHtml, mountNav, toast, STATUS_COLOR, PRIORITY_COLOR, BAND_COLOR, BAND_AR } from '/js/common.js';
 import { icon } from '/js/icons.js';
 import { createMap, setBase, reportsToFC, mapReady, addPilot } from '/js/map.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('map');
+collapsibleSide(document.querySelector('.stage'), { key: 'map-layers', edge: 'start', title: 'الطبقات والفلاتر' });
 useUser(localStorage.getItem('ballegh:ops') || 'ops-sup');
 const M = await meta();
 const [geo, kpis] = await Promise.all([api('/api/geo'), api('/api/kpis?days=60')]);

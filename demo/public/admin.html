@@ -10,7 +10,14 @@
 <link href="/css/app.css" rel="stylesheet">
 <style>
   body { min-height:100vh; }
-  .shell { display:grid; grid-template-columns:240px 1fr; min-height:calc(100vh - 60px); }
+  .shell { --sbs:240px; display:grid; grid-template-columns:var(--sbs) 1fr; min-height:calc(100vh - 60px); }
+  .shell.sbs-off { --sbs:0px; }
+  @media (min-width:901px) {
+    .side { transition:padding .3s var(--ease-out); }
+    .side > * { min-width:218px; }
+    .shell.sbs-off > .side { padding-inline:0; border-left-color:transparent; visibility:hidden; transition:padding .3s var(--ease-out), visibility 0s .3s; }
+  }
+  @media (max-width:900px) { .sb-toggle { display:none; } }
   .side { background:var(--surface); border-left:1px solid var(--border); padding:14px 10px; position:sticky; top:0; height:calc(100vh - 60px); overflow-y:auto; }
   .side a { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; color:var(--text); text-decoration:none; font-size:14px; }
   .side a:hover { background:var(--surface-2); }
@@ -60,9 +67,10 @@
   <main class="content" id="content"></main>
 </div>
 <script type="module">
-import { api, meta, useUser, toast, esc, fmt, dt, modal, brandHtml, mountNav, ROLE_AR } from '/js/common.js';
+import { collapsibleSide, api, meta, useUser, toast, esc, fmt, dt, modal, brandHtml, mountNav, ROLE_AR } from '/js/common.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('admin');
+collapsibleSide(document.querySelector('.shell'), { key: 'admin', edge: 'start', title: 'قائمة الإعدادات' });
 let userId = localStorage.getItem('ballegh:ops') || 'ops-sup';
 useUser(userId); // role comes from the account (see account menu)
 const paintRo = () => document.body.classList.toggle('ro', userId !== 'ops-sup');

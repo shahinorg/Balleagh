@@ -253,3 +253,26 @@ a.card:hover, .card.click:hover, .stat:hover { transform:translateY(-2px); box-s
 }
 .side h6:first-child, .grp:first-child h4, .layers h4:first-child { margin-top:0; }
 .grp h4 { margin:0 0 8px; }
+
+/* ---------- Collapsible sidebars ---------- */
+@property --sbs { syntax:'<length>'; inherits:true; initial-value:0px; }
+@property --sbe { syntax:'<length>'; inherits:true; initial-value:0px; }
+.sb-host { position:relative; transition:--sbs .3s var(--ease-out), --sbe .3s var(--ease-out); }
+.sb-host.sb-noanim, .sb-host.sb-noanim * { transition:none !important; }
+.sb-toggle {
+  position:absolute; top:50%; z-index:40; transform:translateY(-50%);
+  width:20px; height:56px; padding:0; display:grid; place-items:center;
+  border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--muted);
+  box-shadow:0 2px 8px rgb(14 21 17/.10); cursor:pointer;
+  transition:inset-inline-start .3s var(--ease-out), inset-inline-end .3s var(--ease-out), background .15s, color .15s, border-color .15s;
+}
+.sb-toggle:hover { background:var(--primary); border-color:var(--primary); color:#fff; }
+.sb-toggle:focus-visible { outline:3px solid rgb(24 117 53/.35); outline-offset:2px; }
+.sb-toggle[data-edge="start"] { inset-inline-start:max(4px, calc(var(--sbs) - 10px)); }
+.sb-toggle[data-edge="end"] { inset-inline-end:max(4px, calc(var(--sbe) - 10px)); }
+.sb-toggle svg { transition:transform .3s var(--ease-out); }
+/* chevron points the way the panel will move */
+.sb-toggle[data-edge="start"][aria-expanded="false"] svg,
+.sb-toggle[data-edge="end"][aria-expanded="true"] svg { transform:rotate(180deg); }
+.sb-host > aside { overflow-x:hidden; }
+@media print { .sb-toggle { display:none !important; } }

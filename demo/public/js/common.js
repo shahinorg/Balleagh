@@ -227,6 +227,31 @@ async function mountUserMenu(bar) {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
 }
 
+// ---------- Collapsible sidebars ----------
+// host: the grid that holds the sidebar; its CSS uses --sbs (inline-start sidebar width) or --sbe (inline-end),
+// and sets them to 0 under .sbs-off / .sbe-off. State is remembered per page in localStorage.
+export function collapsibleSide(host, { key, edge = 'start', title = 'القائمة' } = {}) {
+  if (!host) return;
+  const cls = edge === 'start' ? 'sbs-off' : 'sbe-off', k = 'ballegh:sb:' + key;
+  let off = false; try { off = localStorage.getItem(k) === '1'; } catch {}
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'sb-toggle'; btn.dataset.edge = edge;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  const apply = () => {
+    host.classList.toggle(cls, off);
+    btn.setAttribute('aria-expanded', String(!off));
+    btn.title = (off ? 'إظهار ' : 'إخفاء ') + title; btn.setAttribute('aria-label', btn.title);
+  };
+  host.classList.add('sb-host', 'sb-noanim'); apply(); host.appendChild(btn);
+  requestAnimationFrame(() => requestAnimationFrame(() => host.classList.remove('sb-noanim')));
+  btn.onclick = () => {
+    off = !off; try { localStorage.setItem(k, off ? '1' : '0'); } catch {}
+    apply();
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
+  };
+  return btn;
+}
+
 // ---------- Motion: reveal on first appearance + animated numbers ----------
 const REDUCED = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const RV_SEL = '.kpi, .card, .stat, .role, .step, .tile';
