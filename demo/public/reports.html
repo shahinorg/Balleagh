@@ -84,7 +84,7 @@
 import { collapsibleSide, api, meta, useUser, esc, fmt, dur, dt, toast, brandHtml, mountNav, bandBadge, statusBadge, priorityBadge, catAr, statusAr, priorityAr, BAND_COLOR, BAND_AR, STATUS_COLOR, ACTION_AR, ROLE_AR } from '/js/common.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('reports');
-collapsibleSide(document.querySelector('.shell'), { key: 'reports', edge: 'start', title: 'قائمة التقارير' });
+collapsibleSide(document.querySelector('.shell'), { key: 'reports', edge: 'start', title: 'قائمة التقارير', fixed: true });
 const USER = localStorage.getItem('ballegh:ops') || 'ops-sup';
 useUser(USER);
 const M = await meta();

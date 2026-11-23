@@ -70,7 +70,7 @@
 import { collapsibleSide, api, meta, useUser, toast, esc, fmt, dt, modal, brandHtml, mountNav, ROLE_AR } from '/js/common.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('admin');
-collapsibleSide(document.querySelector('.shell'), { key: 'admin', edge: 'start', title: 'قائمة الإعدادات' });
+collapsibleSide(document.querySelector('.shell'), { key: 'admin', edge: 'start', title: 'قائمة الإعدادات', fixed: true });
 let userId = localStorage.getItem('ballegh:ops') || 'ops-sup';
 useUser(userId); // role comes from the account (see account menu)
 const paintRo = () => document.body.classList.toggle('ro', userId !== 'ops-sup');

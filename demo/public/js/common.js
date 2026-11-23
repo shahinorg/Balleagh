@@ -230,12 +230,12 @@ async function mountUserMenu(bar) {
 // ---------- Collapsible sidebars ----------
 // host: the grid that holds the sidebar; its CSS uses --sbs (inline-start sidebar width) or --sbe (inline-end),
 // and sets them to 0 under .sbs-off / .sbe-off. State is remembered per page in localStorage.
-export function collapsibleSide(host, { key, edge = 'start', title = 'القائمة' } = {}) {
+export function collapsibleSide(host, { key, edge = 'start', title = 'القائمة', fixed = false } = {}) {
   if (!host) return;
   const cls = edge === 'start' ? 'sbs-off' : 'sbe-off', k = 'ballegh:sb:' + key;
   let off = false; try { off = localStorage.getItem(k) === '1'; } catch {}
   const btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'sb-toggle'; btn.dataset.edge = edge;
+  btn.type = 'button'; btn.className = 'sb-toggle' + (fixed ? ' fixed' : ''); btn.dataset.edge = edge;
   btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   const apply = () => {
     host.classList.toggle(cls, off);

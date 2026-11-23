@@ -259,20 +259,36 @@ a.card:hover, .card.click:hover, .stat:hover { transform:translateY(-2px); box-s
 @property --sbe { syntax:'<length>'; inherits:true; initial-value:0px; }
 .sb-host { position:relative; transition:--sbs .3s var(--ease-out), --sbe .3s var(--ease-out); }
 .sb-host.sb-noanim, .sb-host.sb-noanim * { transition:none !important; }
+/* a pull-tab attached to the outer edge of the sidebar: never covers the sidebar's own content or scrollbar */
 .sb-toggle {
   position:absolute; top:50%; z-index:40; transform:translateY(-50%);
-  width:20px; height:56px; padding:0; display:grid; place-items:center;
-  border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--muted);
-  box-shadow:0 2px 8px rgb(14 21 17/.10); cursor:pointer;
-  transition:inset-inline-start .3s var(--ease-out), inset-inline-end .3s var(--ease-out), background .15s, color .15s, border-color .15s;
+  width:18px; height:52px; padding:0; display:grid; place-items:center;
+  border:1px solid var(--border); background:var(--surface); color:var(--muted);
+  box-shadow:0 2px 6px rgb(14 21 17/.08); cursor:pointer;
+  transition:inset-inline-start .3s var(--ease-out), inset-inline-end .3s var(--ease-out), width .15s, background .15s, color .15s, border-color .15s;
 }
-.sb-toggle:hover { background:var(--primary); border-color:var(--primary); color:#fff; }
-.sb-toggle:focus-visible { outline:3px solid rgb(24 117 53/.35); outline-offset:2px; }
-.sb-toggle[data-edge="start"] { inset-inline-start:max(4px, calc(var(--sbs) - 10px)); }
-.sb-toggle[data-edge="end"] { inset-inline-end:max(4px, calc(var(--sbe) - 10px)); }
+.sb-toggle.fixed { position:fixed; top:calc(50% + 30px); }
+.sb-toggle:hover { width:22px; background:var(--primary); border-color:var(--primary); color:#fff; }
+.sb-toggle:focus-visible { outline:3px solid rgb(24 117 53/.35); outline-offset:1px; }
+.sb-toggle[data-edge="start"] { inset-inline-start:var(--sbs); border-inline-start:0; border-radius:0; border-start-end-radius:10px; border-end-end-radius:10px; }
+.sb-toggle[data-edge="end"] { inset-inline-end:var(--sbe); border-inline-end:0; border-radius:0; border-start-start-radius:10px; border-end-start-radius:10px; }
 .sb-toggle svg { transition:transform .3s var(--ease-out); }
 /* chevron points the way the panel will move */
 .sb-toggle[data-edge="start"][aria-expanded="false"] svg,
 .sb-toggle[data-edge="end"][aria-expanded="true"] svg { transform:rotate(180deg); }
 .sb-host > aside { overflow-x:hidden; }
 @media print { .sb-toggle { display:none !important; } }
+
+/* ---------- Scrollbars: thin, quiet, brand-tinted ---------- */
+:root { --sb-thumb:#C5D3CA; --sb-thumb-faint:#E2EAE4; --sb-thumb-hover:#7FA58C; }
+* { scrollbar-width:thin; scrollbar-color:var(--sb-thumb) transparent; }
+/* sidebars and panels: faint at rest, clearer while the pointer is over them */
+.side, .layers, .panel, #list, .col, .drawer .body, .udrop, .res { scrollbar-color:var(--sb-thumb-faint) transparent; }
+.side:hover, .layers:hover, .panel:hover, #list:hover, .col:hover, .drawer .body:hover, .udrop:hover, .res:hover, .side:focus-within, .layers:focus-within { scrollbar-color:var(--sb-thumb-hover) transparent; }
+/* older WebKit without scrollbar-color */
+@supports not (scrollbar-color:auto) {
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--sb-thumb); border-radius:999px; border:2px solid transparent; background-clip:padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background-color:var(--sb-thumb-hover); }
+}

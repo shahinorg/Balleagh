@@ -13,7 +13,7 @@
   body { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
   .stage { --sbs:314px; flex:1; position:relative; min-height:0; }
   .stage.sbs-off { --sbs:0px; }
-  .stage.sb-host > .sb-toggle { top:42px; transform:none; }
+  .stage.sb-host > .sb-toggle { top:44px; transform:none; inset-inline-start:max(0px, calc(var(--sbs) - 12px)); }
   #map { position:absolute; inset:0; }
   .panel { position:absolute; z-index:5; background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--sh-md); }
   .layers { top:12px; right:12px; width:290px; max-height:calc(100% - 24px); overflow-y:auto; padding:12px 14px; }
