@@ -166,6 +166,7 @@ export function chime() {
 // Staff navigation shared by ops / map / reports / governor / admin
 const NAV = [
   ['ops', '/ops.html', 'غرفة العمليات'],
+  ['list', '/list.html', 'البلاغات'],
   ['map', '/map.html', 'الخريطة'],
   ['reports', '/reports.html', 'التقارير'],
   ['governor', '/governor.html', 'لوحة المحافظ'],
@@ -194,7 +195,7 @@ async function mountUserMenu(bar) {
   // The role belongs to the account, so it is shown here — not as a switch in the top bar.
   // In the demo one login stands in for every role; the switch below is labelled as a demo aid.
   const page = location.pathname.replace(/\.html$/, '');
-  const opsPage = /^\/(ops|admin|map|reports|presentation)$/.test(page);
+  const opsPage = /^\/(ops|list|admin|map|reports|presentation)$/.test(page);
   const opsRole = (() => { try { return localStorage.getItem('ballegh:ops') || 'ops-sup'; } catch { return 'ops-sup'; } })();
   const roleLabel = page === '/governor' ? 'المحافظ' : page === '/unit' ? 'رئيس وحدة محلية' : opsRole === 'ops-rev' ? 'مراجع غرفة العمليات' : 'مشرف غرفة العمليات';
   const switchTo = opsRole === 'ops-rev' ? ['ops-sup', 'مشرف الغرفة'] : ['ops-rev', 'مراجع الغرفة'];

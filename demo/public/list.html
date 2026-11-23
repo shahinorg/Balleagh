@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بلّغ — قائمة البلاغات</title>
+<link rel="icon" href="/brand/ballegh-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="/css/app.css" rel="stylesheet">
+<style>
+  .wrap { max-width:1440px; margin:0 auto; padding:18px 22px 50px; }
+  .head { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .head h1 { margin:0; font-size:22px; }
+  .head .sub { font-size:13px; color:var(--muted); }
+
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .tabs button { display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 14px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--text); font:inherit; font-size:14px; font-weight:500; cursor:pointer; transition:background .15s, border-color .15s, color .15s; }
+  .tabs button:hover { background:var(--surface-2); }
+  .tabs button b { min-width:24px; padding:1px 8px; border-radius:999px; background:var(--surface-2); font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .tabs button.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .tabs button.on b { background:rgb(255 255 255/.22); color:#fff; }
+  .tabs button[data-t="late"] b { color:#B91C1C; background:#FEE2E2; }
+  .tabs button[data-t="late"].on b { color:#fff; background:rgb(255 255 255/.22); }
+
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:10px; margin-bottom:12px; }
+  .toolbar .search { position:relative; flex:1 1 260px; }
+  .toolbar .search input { padding-inline-start:36px; }
+  .toolbar .search svg { position:absolute; inset-inline-start:11px; top:50%; transform:translateY(-50%); color:var(--muted); }
+  .toolbar select.input { width:auto; min-width:0; flex:0 1 auto; }
+
+  .tablebox { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+  table.rl { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .rl th { position:sticky; top:0; background:var(--surface-2); text-align:right; font-weight:600; font-size:12.5px; color:var(--muted); padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none; }
+  .rl th[data-s]:hover { color:var(--text); }
+  .rl th .ar { opacity:.35; margin-inline-start:4px; }
+  .rl th.sorted { color:var(--primary); } .rl th.sorted .ar { opacity:1; }
+  .rl td { padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .rl tbody tr { cursor:pointer; transition:background .12s; }
+  .rl tbody tr:hover { background:#F6FAF7; }
+  .rl tbody tr.sel { background:var(--primary-soft); box-shadow:inset -3px 0 0 var(--primary); }
+  .rl .code { font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .rl .cat { display:flex; align-items:center; gap:10px; min-width:170px; }
+  .rl .cat img, .rl .cat .ph { width:38px; height:38px; border-radius:9px; object-fit:cover; flex:none; background:var(--surface-2); }
+  .rl .cat b { font-weight:600; display:block; }
+  .rl .cat small { color:var(--muted); font-size:12px; }
+  .rl .loc { color:var(--text); } .rl .loc small { display:block; color:var(--muted); font-size:12px; }
+  .rl .sla { min-width:120px; }
+  .rl td.c-when { white-space:nowrap; color:var(--muted); font-size:12.5px; }
+  .rl td.c-loc { min-width:110px; }
+  .src { font-size:11px; padding:1px 8px; border-radius:999px; background:#EEF2FF; color:#4338CA; margin-inline-start:4px; }
+  .dup { font-size:11px; padding:1px 7px; border-radius:999px; background:var(--gold-50); color:#7A4B00; }
+  .empty { padding:50px 16px; text-align:center; color:var(--muted); }
+
+  .pager { display:flex; align-items:center; gap:8px; padding:10px 12px; font-size:13px; color:var(--muted); border-top:1px solid var(--border); }
+  .pager .spacer { flex:1; }
+
+  /* details drawer */
+  .drawer-bg { position:fixed; inset:0; background:rgb(14 21 17/.35); z-index:800; opacity:0; pointer-events:none; transition:opacity .2s; }
+  .drawer-bg.open { opacity:1; pointer-events:auto; }
+  .drawer { position:fixed; top:0; bottom:0; left:0; width:min(520px,100%); background:var(--surface); z-index:801; box-shadow:var(--sh-lg); display:flex; flex-direction:column; transform:translateX(-102%); transition:transform .3s var(--ease-out, ease-out); }
+  .drawer.open { transform:none; }
+  .drawer header { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--border); }
+  .drawer header h3 { margin:0; font-size:18px; font-variant-numeric:tabular-nums; }
+  .drawer .body { flex:1; overflow-y:auto; padding:16px 18px 24px; display:grid; gap:14px; align-content:start; }
+  .drawer .info { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13.5px; }
+  .drawer .info dt { color:var(--muted); } .drawer .info dd { margin:0; }
+  .drawer .acts { display:flex; gap:8px; flex-wrap:wrap; padding:12px 18px; border-top:1px solid var(--border); }
+  .drawer h4 { margin:0 0 6px; font-size:14px; }
+  .drawer .gallery img, .drawer .gallery video { max-height:220px; width:100%; object-fit:cover; border-radius:12px; }
+
+  @media (max-width:1100px) { .rl .c-unit, .rl .c-when { display:none; } }
+  @media (max-width:760px) {
+    .wrap { padding:12px 12px 40px; }
+    .toolbar select.input { flex:1 1 calc(50% - 8px); }
+    .rl thead { display:none; }
+    .rl, .rl tbody { display:block; }
+    .rl tbody tr { display:grid; grid-template-columns:1fr auto; gap:6px 10px; padding:12px; border-bottom:1px solid var(--border); }
+    .rl td { display:block; padding:0; border:0; }
+    .rl .c-cat { grid-column:1 / -1; } .rl .c-code { order:-1; } .rl .c-st { justify-self:end; order:-1; }
+    .rl .c-unit, .rl .c-when { display:none; }
+    .rl .c-loc { grid-column:1 / -1; font-size:13px; }
+    .rl .c-pr { order:5; } .rl .c-sla { grid-column:1 / -1; order:6; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar"><span id="brand"></span><span class="spacer"></span></header>
+<div class="wrap">
+  <div class="head">
+    <div><h1>البلاغات</h1><div class="sub" id="sub">جاري التحميل…</div></div>
+    <span class="spacer"></span>
+    <button class="btn secondary sm" id="csv">تصدير Excel</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="toolbar">
+    <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="input" id="q" type="search" placeholder="بحث برقم البلاغ أو القرية أو الوحدة…" autocomplete="off"></label>
+    <select class="input" id="days" aria-label="الفترة"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يوم</option><option value="60">آخر 60 يوم</option><option value="0">كل الفترات</option></select>
+    <select class="input" id="center" aria-label="المركز"><option value="">كل المراكز</option></select>
+    <select class="input" id="unit" aria-label="الوحدة"><option value="">كل الوحدات</option></select>
+    <select class="input" id="category" aria-label="التصنيف"><option value="">كل التصنيفات</option></select>
+    <select class="input" id="priority" aria-label="الأولوية"><option value="">كل الأولويات</option></select>
+    <select class="input" id="source" aria-label="المصدر"><option value="">كل المصادر</option><option value="app">تطبيق المواطن</option><option value="social">سوشيال ميديا</option></select>
+    <button class="btn ghost sm" id="clear">مسح</button>
+  </div>
+  <div class="tablebox">
+    <table class="rl">
+      <thead><tr>
+        <th data-s="code" class="c-code">رقم البلاغ<span class="ar">↕</span></th>
+        <th data-s="category" class="c-cat">التصنيف<span class="ar">↕</span></th>
+        <th data-s="place" class="c-loc">الموقع<span class="ar">↕</span></th>
+        <th data-s="unit" class="c-unit">الوحدة المختصة<span class="ar">↕</span></th>
+        <th data-s="status" class="c-st">الحالة<span class="ar">↕</span></th>
+        <th data-s="priority" class="c-pr">الأولوية<span class="ar">↕</span></th>
+        <th data-s="due" class="c-sla">مدة الحل<span class="ar">↕</span></th>
+        <th data-s="createdAt" class="c-when">التاريخ<span class="ar">↕</span></th>
+      </tr></thead>
+      <tbody id="rows"><tr><td colspan="8" class="empty">جاري التحميل…</td></tr></tbody>
+    </table>
+    <div class="pager" id="pager"></div>
+  </div>
+</div>
+
+<div class="drawer-bg" id="dbg"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-label="تفاصيل البلاغ">
+  <header><h3 id="dTitle"></h3><span id="dBadges" class="row" style="gap:6px"></span><span class="spacer"></span><button class="icon-btn" id="dClose" aria-label="إغلاق">✕</button></header>
+  <div class="body" id="dBody"></div>
+  <div class="acts" id="dActs"></div>
+</aside>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module">
+import { api, meta, useUser, esc, fmt, dur, dt, ago, mountNav, brandHtml, statusBadge, priorityBadge, slaBar, catAr, statusAr, priorityAr, timeline, gallery, toast } from '/js/common.js';
+
+document.getElementById('brand').innerHTML = brandHtml(); mountNav('list');
+useUser((() => { try { return localStorage.getItem('ballegh:ops') || 'ops-sup'; } catch { return 'ops-sup'; } })());
+const M = await meta();
+const geo = await api('/api/geo');
+const $ = id => document.getElementById(id);
+const OPEN = ['NEW', 'ROUTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'PENDING_BUDGET', 'PARTIALLY_RESOLVED', 'REOPENED', 'NOT_COMPETENT', 'OPS_QUEUE'];
+const PRIO_RANK = { CRITICAL: 0, URGENT: 1, NORMAL: 2, LOW: 3 };
+const PAGE = 50;
+
+const TABS = [
+  ['all', 'الكل', () => true],
+  ['open', 'مفتوحة', r => OPEN.includes(r.status)],
+  ['late', 'متأخرة', r => OPEN.includes(r.status) && r.resolveDueAt && Date.now() > r.resolveDueAt],
+  ['ops', 'لدى الغرفة', r => r.status === 'OPS_QUEUE' || r.status === 'NOT_COMPETENT'],
+  ['resolved', 'محلولة', r => r.status === 'RESOLVED' || r.status === 'CLOSED'],
+  ['rejected', 'مرفوضة', r => r.status === 'REJECTED'],
+];
+
+// filters
+const opts = (id, items) => $(id).insertAdjacentHTML('beforeend', items.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join(''));
+opts('center', geo.centers.features.map(f => [f.properties.id, f.properties.name]));
+opts('category', M.categories.map(c => [c.code, c.ar]));
+opts('priority', Object.keys(PRIO_RANK).map(p => [p, priorityAr(p)]));
+const fillUnits = () => { const c = $('center').value; $('unit').innerHTML = '<option value="">كل الوحدات</option>' + geo.units.features.filter(f => !c || f.properties.centerId === c).map(f => `<option value="${esc(f.properties.id)}">${esc(f.properties.name)}</option>`).join(''); };
+fillUnits();
+
+let all = [], tab = 'all', sort = { k: 'createdAt', dir: -1 }, page = 0, selected = null;
+
+async function load() {
+  all = await api(`/api/reports?days=${$('days').value}`);
+  render();
+}
+
+function filtered() {
+  const q = $('q').value.trim().toLowerCase();
+  const f = { center: $('center').value, unit: $('unit').value, category: $('category').value, priority: $('priority').value, source: $('source').value };
+  return all.filter(r => (!f.center || r.centerId === f.center) && (!f.unit || r.unitId === f.unit) && (!f.category || r.category === f.category)
+    && (!f.priority || r.priority === f.priority) && (!f.source || (r.source || 'app') === f.source)
+    && (!q || [r.code, r.villageName, r.unitName, r.centerName, r.noUnitArea, catAr(r.category)].some(v => v && String(v).toLowerCase().includes(q))));
+}
+
+const KEY = {
+  code: r => r.code, category: r => catAr(r.category), place: r => r.villageName || r.noUnitArea || '', unit: r => r.unitName || '',
+  status: r => statusAr(r.status), priority: r => PRIO_RANK[r.priority] ?? 9, createdAt: r => r.createdAt,
+  due: r => OPEN.includes(r.status) && r.resolveDueAt ? r.resolveDueAt : Infinity,
+};
+
+function render() {
+  const base = filtered();
+  $('tabs').innerHTML = TABS.map(([k, t, fn]) => `<button data-t="${k}" class="${k === tab ? 'on' : ''}">${t}<b>${fmt(base.filter(fn).length)}</b></button>`).join('');
+  const fn = TABS.find(t => t[0] === tab)[2];
+  const list = base.filter(fn);
+  const kf = KEY[sort.k];
+  list.sort((a, b) => { const x = kf(a), y = kf(b); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
+  const pages = Math.max(1, Math.ceil(list.length / PAGE));
+  page = Math.min(page, pages - 1);
+  const slice = list.slice(page * PAGE, page * PAGE + PAGE);
+  $('sub').textContent = `${fmt(list.length)} بلاغ من ${fmt(all.length)} في الفترة المختارة`;
+  document.querySelectorAll('.rl th[data-s]').forEach(th => { const on = th.dataset.s === sort.k; th.classList.toggle('sorted', on); th.querySelector('.ar').textContent = on ? (sort.dir > 0 ? '↑' : '↓') : '↕'; });
+  $('rows').innerHTML = slice.length ? slice.map(r => `<tr data-id="${esc(r.id)}" class="${r.id === selected ? 'sel' : ''}">
+      <td class="c-code"><span class="code">${esc(r.code)}</span></td>
+      <td class="c-cat"><div class="cat">${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : '<span class="ph"></span>'}<div><b>${esc(catAr(r.category))}</b>${r.source === 'social' ? '<span class="src">سوشيال</span>' : ''}${r.duplicateCount ? ` <span class="dup">×${r.duplicateCount + 1}</span>` : ''}</div></div></td>
+      <td class="c-loc"><div class="loc">${esc(r.villageName || r.noUnitArea || '—')}<small>${esc(r.centerName || '')}</small></div></td>
+      <td class="c-unit">${esc(r.unitName || 'غرفة العمليات')}</td>
+      <td class="c-st">${statusBadge(r.status)}</td>
+      <td class="c-pr">${priorityBadge(r.priority)}</td>
+      <td class="c-sla">${slaBar(r) || '<span class="muted tiny">—</span>'}</td>
+      <td class="c-when" title="${esc(dt(r.createdAt))}">${esc(ago(r.createdAt))}</td>
+    </tr>`).join('') : `<tr><td colspan="8" class="empty">مفيش بلاغات مطابقة للفلاتر دي.</td></tr>`;
+  $('pager').innerHTML = `<span>عرض ${fmt(list.length ? page * PAGE + 1 : 0)}–${fmt(Math.min(list.length, (page + 1) * PAGE))} من ${fmt(list.length)}</span><span class="spacer"></span>
+    <button class="btn ghost sm" data-p="-1" ${page === 0 ? 'disabled' : ''}>السابق</button><span class="num">${page + 1} / ${pages}</span><button class="btn ghost sm" data-p="1" ${page >= pages - 1 ? 'disabled' : ''}>التالي</button>`;
+  render.list = list;
+}
+
+// events
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; page = 0; render(); };
+let qt; $('q').oninput = () => { clearTimeout(qt); qt = setTimeout(() => { page = 0; render(); }, 150); };
+['unit', 'category', 'priority', 'source'].forEach(id => $(id).onchange = () => { page = 0; render(); });
+$('center').onchange = () => { fillUnits(); page = 0; render(); };
+$('days').onchange = () => { page = 0; load(); };
+$('clear').onclick = () => { ['q', 'center', 'category', 'priority', 'source'].forEach(id => $(id).value = ''); fillUnits(); tab = 'all'; page = 0; render(); };
+document.querySelector('.rl thead').onclick = e => { const th = e.target.closest('th[data-s]'); if (!th) return; const k = th.dataset.s; sort = sort.k === k ? { k, dir: -sort.dir } : { k, dir: k === 'createdAt' ? -1 : 1 }; render(); };
+$('pager').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; page += Number(b.dataset.p); render(); document.querySelector('.tablebox').scrollIntoView({ block: 'start', behavior: 'smooth' }); };
+$('rows').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) openReport(tr.dataset.id); };
+
+// drawer
+async function openReport(id) {
+  selected = id;
+  document.querySelectorAll('#rows tr').forEach(tr => tr.classList.toggle('sel', tr.dataset.id === id));
+  history.replaceState(null, '', `?id=${encodeURIComponent(id)}`);
+  $('dTitle').textContent = '…'; $('dBadges').innerHTML = ''; $('dBody').innerHTML = '<div class="skel" style="height:180px"></div><div class="skel" style="height:90px"></div>'; $('dActs').innerHTML = '';
+  $('drawer').classList.add('open'); $('dbg').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false');
+  let r;
+  try { r = await api('/api/reports/' + encodeURIComponent(id)); } catch (err) { $('dBody').innerHTML = `<div class="empty">${esc(err.message)}</div>`; return; }
+  if (selected !== id) return;
+  $('dTitle').textContent = r.code;
+  $('dBadges').innerHTML = statusBadge(r.status) + priorityBadge(r.priority);
+  const rep = r.reporter ? (r.reporter.hidden ? 'مخفي عن الوحدة' : `${esc(r.reporter.name || '')}${r.reporter.phone ? ` <span class="num" dir="ltr">${esc(r.reporter.phone)}</span>` : ''}`) : '—';
+  $('dBody').innerHTML = `
+    ${r.media?.length ? gallery(r.media) : ''}
+    ${slaBar(r)}
+    <dl class="info">
+      <dt>التصنيف</dt><dd>${esc(catAr(r.category))}</dd>
+      <dt>الموقع</dt><dd>${esc(r.villageName || r.noUnitArea || '—')} — ${esc(r.centerName || '')}</dd>
+      <dt>الوحدة المختصة</dt><dd>${esc(r.unitName || 'غرفة العمليات')}</dd>
+      <dt>الموظف المسؤول</dt><dd>${esc(r.assigneeName || '—')}</dd>
+      <dt>المبلّغ</dt><dd>${rep}</dd>
+      <dt>المصدر</dt><dd>${r.source === 'social' ? 'سوشيال ميديا' : 'تطبيق المواطن'}</dd>
+      <dt>تاريخ البلاغ</dt><dd class="num">${esc(dt(r.createdAt))}</dd>
+      ${r.resolveDueAt ? `<dt>موعد الحل</dt><dd class="num">${esc(dt(r.resolveDueAt))}</dd>` : ''}
+      ${r.duplicateCount ? `<dt>بلاغات مكررة</dt><dd>${r.duplicateCount} بلاغ إضافي عن نفس المشكلة</dd>` : ''}
+      ${r.stars != null ? `<dt>تقييم المواطن</dt><dd>${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</dd>` : ''}
+    </dl>
+    ${r.description ? `<div><h4>وصف المواطن</h4><div class="small" style="line-height:1.8">${esc(r.description)}</div></div>` : ''}
+    ${r.resolution ? `<div><h4>تقرير الحل</h4><div class="small" style="line-height:1.8">${esc(r.resolution.actionTaken || '')}${r.resolution.executingParty ? ` — ${esc(r.resolution.executingParty)}` : ''}</div></div>` : ''}
+    ${r.rejection ? `<div><h4>سبب الرفض</h4><div class="small">${esc(r.rejection.reason || '')}</div></div>` : ''}
+    <div><h4>السجل الزمني</h4>${timeline(r.events || [])}</div>`;
+  $('dActs').innerHTML = `<a class="btn sm" href="/report.html?id=${encodeURIComponent(r.id)}" target="_blank">تقرير رسمي PDF</a>
+    <a class="btn ghost sm" href="https://www.google.com/maps?q=${r.location[1]},${r.location[0]}" target="_blank" rel="noopener">الموقع على الخريطة</a>`;
+}
+function closeDrawer() {
+  selected = null;
+  $('drawer').classList.remove('open'); $('dbg').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true');
+  document.querySelectorAll('#rows tr.sel').forEach(tr => tr.classList.remove('sel'));
+  history.replaceState(null, '', location.pathname);
+}
+$('dClose').onclick = closeDrawer; $('dbg').onclick = closeDrawer;
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && selected) closeDrawer(); });
+
+// export
+$('csv').onclick = () => {
+  const list = render.list || [];
+  const head = ['رقم البلاغ', 'التصنيف', 'القرية', 'المركز', 'الوحدة', 'الحالة', 'الأولوية', 'المصدر', 'تاريخ البلاغ', 'موعد الحل'];
+  const rows = list.map(r => [r.code, catAr(r.category), r.villageName || r.noUnitArea || '', r.centerName || '', r.unitName || '', statusAr(r.status), priorityAr(r.priority), r.source === 'social' ? 'سوشيال' : 'تطبيق', dt(r.createdAt), r.resolveDueAt ? dt(r.resolveDueAt) : '']);
+  const csv = '﻿' + [head, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `ballegh-reports-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  toast(`تم تصدير ${fmt(list.length)} بلاغ`, 'ok');
+};
+
+// realtime
+try {
+  const socket = io();
+  let rt; const refresh = () => { clearTimeout(rt); rt = setTimeout(load, 400); };
+  socket.on('report:new', refresh); socket.on('report:update', refresh); socket.on('demo:reset', refresh);
+} catch {}
+
+await load();
+const initial = new URLSearchParams(location.search).get('id');
+if (initial) openReport(initial);
+</script>
+</body>
+</html>
