@@ -20,7 +20,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS = process.env.UPLOADS_DIR ? path.resolve(process.env.UPLOADS_DIR) : process.env.DATA_DIR ? path.join(DATA_DIR, 'uploads') : path.join(HERE, 'uploads');
 fs.mkdirSync(UPLOADS, { recursive: true });
 
-if (!load()) { console.log('No data yet — generating demo data…'); console.log(seed()); }
+if (!load()) { console.log('No usable data — generating demo data…'); const t = Date.now(); console.log(seed(), `in ${Date.now() - t} ms`); }
 
 const app = express();
 const server = http.createServer(app);

@@ -1,7 +1,7 @@
 // Generates realistic demo data: users, ~1,500 reports over 60 days with full timelines.
 // Run: npm run seed   (also runs automatically on first server start)
 import { pathToFileURL } from 'node:url';
-import { db, replaceAll, createReport, act, runEscalation, userById } from '../lib/store.js';
+import { db, beginSeed, endSeed, createReport, act, runEscalation, userById } from '../lib/store.js';
 import { buildGeo, randomPointIn } from '../lib/geo.js';
 import { CATEGORIES, DEFAULT_SETTINGS, DEFAULT_CONTENT } from '../lib/config.js';
 
@@ -36,7 +36,8 @@ export function seed({ seedValue = 20261120, reportsCount = 4500, now = Date.now
   const name = () => `${pick(FIRST)} ${pick(FIRST)} ${pick(LAST)}`;
   const geo = buildGeo();
 
-  replaceAll({ settings: structuredClone(DEFAULT_SETTINGS), categories: structuredClone(CATEGORIES).map(c => ({ ...c, active: true })), content: structuredClone(DEFAULT_CONTENT), unitMeta: {}, users: [], reports: [], audit: [], seq: 0 });
+  // nothing touches the disk until the whole dataset is built (see endSeed below)
+  beginSeed({ settings: structuredClone(DEFAULT_SETTINGS), categories: structuredClone(CATEGORIES).map(c => ({ ...c, active: true })), content: structuredClone(DEFAULT_CONTENT), unitMeta: {}, users: [], reports: [], audit: [], seq: 0 });
 
   // users
   db.users.push({ id: 'c-demo', role: 'CITIZEN', name: 'مواطن تجريبي', phone: '01000000000', phoneVerified: true });
@@ -153,7 +154,7 @@ export function seed({ seedValue = 20261120, reportsCount = 4500, now = Date.now
     }
   }
   runEscalation(now);
-  replaceAll({ ...db });
+  endSeed();
   return { reports: db.reports.length, users: db.users.length, audit: db.audit.length };
 }
 

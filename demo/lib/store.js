@@ -21,24 +21,41 @@ export const db = {
   seq: 0,
 };
 
-let saveTimer = null;
-export function save() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(DB_FILE, JSON.stringify(db));
-  }, 500);
+// Atomic write: write a temp file, then rename over the real one — a crash mid-write can't leave a broken db.json
+function writeDb() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const tmp = `${DB_FILE}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(db));
+  fs.renameSync(tmp, DB_FILE);
 }
+let saveTimer = null;
+let seeding = false;
+export function save() {
+  if (seeding) return; // the seed writes once, at the very end
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(writeDb, 500);
+}
+// Returns false when there's no usable data (missing, unreadable, or empty) so the caller can (re)seed.
 export function load() {
   if (!fs.existsSync(DB_FILE)) return false;
-  Object.assign(db, JSON.parse(fs.readFileSync(DB_FILE, 'utf8')));
+  let data;
+  try { data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch (e) {
+    const bad = `${DB_FILE}.corrupt-${Date.now()}`;
+    fs.renameSync(DB_FILE, bad);
+    console.warn(`[store] db.json was unreadable (${e.message}) — moved to ${path.basename(bad)}`);
+    return false;
+  }
+  if (!Array.isArray(data.reports) || !data.reports.length) { console.warn('[store] db.json has no reports — will regenerate demo data'); return false; }
+  Object.assign(db, data);
   ensureDefaults();
   return true;
 }
+// Seed lifecycle: build everything in memory, persist once when complete.
+export function beginSeed(next) { seeding = true; clearTimeout(saveTimer); Object.assign(db, next); }
+export function endSeed() { seeding = false; writeDb(); }
 export function replaceAll(next) {
   Object.assign(db, next);
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DB_FILE, JSON.stringify(db));
+  writeDb();
 }
 
 export function ensureDefaults() {
