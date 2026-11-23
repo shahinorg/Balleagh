@@ -46,7 +46,8 @@
   <small>ديوان عام محافظة الفيوم · منصة بلّغ</small>
 </aside>
 <main>
-  <form id="f" autocomplete="on" novalidate>
+  <form id="f" method="post" action="/api/staff/login" autocomplete="on" novalidate>
+    <input type="hidden" name="next" id="next" value="/demo.html">
     <div class="logo"><img src="/brand/ballegh-mark.svg" alt=""><div><b>بلّغ</b><span>منصة بلاغات محافظة الفيوم</span></div></div>
     <h1>دخول الموظفين</h1>
     <p class="sub">ادخل اسم المستخدم وكلمة المرور الخاصة بالموظفين.</p>
@@ -62,6 +63,9 @@
   const raw = q.get('next') || '/demo.html';
   const next = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/api/') ? raw : '/demo.html';
   const $ = id => document.getElementById(id);
+  $('next').value = next;
+  const ERR = { bad: 'اسم المستخدم أو كلمة المرور غير صحيحة', locked: 'محاولات كتير غلط — جرّب تاني بعد ربع ساعة' };
+  if (ERR[q.get('error')]) { $('err').textContent = ERR[q.get('error')]; $('err').classList.add('show'); history.replaceState(null, '', location.pathname + '?next=' + encodeURIComponent(next)); }
   fetch('/api/staff/session').then(r => r.json()).then(s => { if (s.loggedIn) location.replace(next); }).catch(() => {});
   $('show').onclick = () => { const p = $('password'); p.type = p.type === 'password' ? 'text' : 'password'; $('show').textContent = p.type === 'password' ? 'إظهار' : 'إخفاء'; };
   $('f').onsubmit = async e => {

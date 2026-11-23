@@ -141,5 +141,34 @@ textarea.input { min-height:84px; resize:vertical; line-height:1.7; }
 .snav a:hover { background:var(--surface-2); color:var(--text); }
 .snav a.on { background:var(--primary-soft); color:var(--primary); font-weight:600; }
 @media (max-width:1100px) { .snav a { padding:6px 8px; font-size:13px; } }
-.snav a.out { color:#B91C1C; margin-inline-start:6px; border:1px solid #F6C1C1; }
-.snav a.out:hover { background:#FDECEC; color:#991B1B; }
+/* account menu (end of the staff top bar) */
+.umenu { position:relative; margin-inline-start:6px; flex:none; }
+.ubtn { display:flex; align-items:center; gap:8px; height:40px; padding:0 8px 0 12px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--text); cursor:pointer; font:inherit; font-size:14px; transition:background .15s, border-color .15s, box-shadow .15s; }
+.ubtn:hover { background:var(--surface-2); }
+.umenu.open .ubtn { border-color:var(--green-100); box-shadow:0 0 0 3px rgb(24 117 53/.12); }
+.ubtn svg { color:var(--muted); transition:transform .15s; }
+.umenu.open .ubtn svg { transform:rotate(180deg); }
+.ubtn .un { font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.av { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--green-500),var(--green-700)); color:#fff; display:grid; place-items:center; font-weight:700; font-size:13px; flex:none; }
+.av.lg { width:40px; height:40px; font-size:16px; }
+.udrop { position:absolute; top:calc(100% + 8px); left:0; min-width:250px; background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--sh-lg); padding:6px; z-index:100; animation:udrop .14s ease-out; }
+@keyframes udrop { from { opacity:0; transform:translateY(-4px); } }
+.uhead { display:flex; align-items:center; gap:12px; padding:10px 10px 12px; border-bottom:1px solid var(--surface-2); margin-bottom:4px; }
+.uhead b { display:block; font-size:15px; }
+.uhead span { display:block; font-size:12px; color:var(--muted); }
+.uinfo { display:flex; align-items:center; gap:8px; padding:6px 10px 8px; font-size:12px; color:var(--muted); }
+.uitem { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:var(--text); text-decoration:none; font-size:14px; }
+.uitem svg { color:var(--muted); }
+.uitem:hover { background:var(--surface-2); }
+.uitem.danger { color:#B91C1C; }
+.uitem.danger svg { color:#B91C1C; }
+.uitem.danger:hover { background:#FDECEC; }
+.usep { height:1px; background:var(--surface-2); margin:4px 2px; }
+@media (max-width:1100px) { .ubtn .un { display:none; } .ubtn { padding:0 6px; } }
+
+/* crowded top bars (ops room): keep controls intact, let the nav scroll instead of squashing everything */
+.topbar > * { flex-shrink:0; }
+.topbar > .snav { flex-shrink:1; min-width:0; }
+.topbar > .spacer { flex-shrink:1; min-width:0; }
+.topbar .seg button, .topbar .btn { white-space:nowrap; }
+@media (max-width:1500px) { .topbar .brand small { display:none; } }

@@ -69,27 +69,41 @@ app.use((req, res, next) => {
 
 // login with simple brute-force protection: 8 failed attempts per IP per 15 minutes
 const failures = new Map();
-app.post('/api/staff/login', (req, res) => {
+// Accepts JSON (the login page's script) and a plain HTML form POST (works even before/without JavaScript,
+// so the password is never sent in a URL). Form posts get redirects instead of JSON.
+const safeNext = n => (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/api/')) ? n : '/demo.html';
+app.post('/api/staff/login', express.urlencoded({ extended: false, limit: '4kb' }), (req, res) => {
   res.set('Cache-Control', 'no-store');
-  if (!ACCESS_PASS) return res.json({ ok: true, open: true });
+  const isForm = req.is('application/x-www-form-urlencoded');
+  const body = req.body || {};
+  const next = safeNext(body.next);
+  const fail = (status, code, error) => isForm
+    ? res.redirect(303, `/login.html?error=${code}&next=${encodeURIComponent(next)}`)
+    : res.status(status).json({ error });
+  if (!ACCESS_PASS) return isForm ? res.redirect(303, next) : res.json({ ok: true, open: true });
   const ip = req.ip || 'x', now = Date.now();
   const f = (failures.get(ip) || []).filter(t => now - t < 15 * 60_000);
-  if (f.length >= 8) return res.status(429).json({ error: 'محاولات كتير غلط — جرّب تاني بعد ربع ساعة' });
-  const { user, password } = req.body || {};
+  if (f.length >= 8) return fail(429, 'locked', 'محاولات كتير غلط — جرّب تاني بعد ربع ساعة');
+  const user = body.user ?? body.username, password = body.password;
   if (!(String(user || '').trim() === ACCESS_USER && sameSecret(password || '', ACCESS_PASS))) {
     f.push(now); failures.set(ip, f);
-    return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+    return fail(401, 'bad', 'اسم المستخدم أو كلمة المرور غير صحيحة');
   }
   failures.delete(ip);
   const exp = now + SESSION_MS;
   const secure = req.secure || req.get('x-forwarded-proto') === 'https';
   res.set('Set-Cookie', `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MS / 1000}${secure ? '; Secure' : ''}`);
+  if (isForm) return res.redirect(303, next);
   res.json({ ok: true });
 });
 app.get('/api/staff/logout', (_req, res) => {
   res.set('Set-Cookie', `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`).set('Cache-Control', 'no-store').redirect(302, '/login.html');
 });
-app.get('/api/staff/session', (req, res) => res.set('Cache-Control', 'no-store').json({ loggedIn: hasStaffAccess(req), required: !!ACCESS_PASS }));
+app.get('/api/staff/session', (req, res) => {
+  const loggedIn = hasStaffAccess(req);
+  const exp = Number((cookieOf(req, COOKIE) || '').split('.')[0]) || null;
+  res.set('Cache-Control', 'no-store').json({ loggedIn, required: !!ACCESS_PASS, user: loggedIn && ACCESS_PASS ? ACCESS_USER : null, expiresAt: loggedIn && exp > Date.now() ? exp : null });
+});
 
 app.use(express.static(path.join(HERE, 'public'), { extensions: ['html'] }));
 app.use('/uploads', express.static(UPLOADS));
