@@ -92,7 +92,7 @@ app.post('/api/staff/login', express.urlencoded({ extended: false, limit: '4kb' 
   failures.delete(ip);
   const exp = now + SESSION_MS;
   const secure = req.secure || req.get('x-forwarded-proto') === 'https';
-  res.set('Set-Cookie', `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MS / 1000}${secure ? '; Secure' : ''}`);
+  res.set('Set-Cookie', `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`);
   if (isForm) return res.redirect(303, next);
   res.json({ ok: true });
 });

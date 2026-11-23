@@ -33,6 +33,12 @@
   .err { display:none; }
   .err.show { display:block; }
   .foot { font-size:13px; color:var(--muted); text-align:center; }
+  .already { width:min(400px,100%); display:grid; gap:14px; }
+  .already[hidden], form[hidden] { display:none; }
+  .acard { display:flex; align-items:center; gap:14px; background:var(--primary-soft); border:1px solid var(--green-100); border-radius:16px; padding:16px; }
+  .acard b { display:block; font-size:17px; }
+  .acard span { font-size:13px; color:var(--muted); }
+  .acard .av { width:46px; height:46px; font-size:18px; }
 </style>
 </head>
 <body>
@@ -57,6 +63,13 @@
     <button class="btn lg block" id="go" type="submit">دخول</button>
     <div class="foot"><a href="/">الرجوع للموقع العام</a> · <a href="/citizen.html">تطبيق المواطن</a></div>
   </form>
+  <div id="already" class="already" hidden>
+    <div class="logo"><img src="/brand/ballegh-mark.svg" alt=""><div><b>بلّغ</b><span>منصة بلاغات محافظة الفيوم</span></div></div>
+    <div class="acard"><span class="av" id="aAv">A</span><div><b>أنت مسجّل دخول بالفعل</b><span>باسم <bdi id="aUser">admin</bdi> — الجلسة سارية حتى <bdi id="aUntil" class="num"></bdi></span></div></div>
+    <a class="btn lg block" id="aGo" href="/demo.html">متابعة</a>
+    <a class="btn lg block ghost" href="/api/staff/logout">تسجيل الخروج والدخول بحساب آخر</a>
+    <div class="foot"><a href="/">الرجوع للموقع العام</a></div>
+  </div>
 </main>
 <script>
   const q = new URLSearchParams(location.search);
@@ -66,7 +79,16 @@
   $('next').value = next;
   const ERR = { bad: 'اسم المستخدم أو كلمة المرور غير صحيحة', locked: 'محاولات كتير غلط — جرّب تاني بعد ربع ساعة' };
   if (ERR[q.get('error')]) { $('err').textContent = ERR[q.get('error')]; $('err').classList.add('show'); history.replaceState(null, '', location.pathname + '?next=' + encodeURIComponent(next)); }
-  fetch('/api/staff/session').then(r => r.json()).then(s => { if (s.loggedIn) location.replace(next); }).catch(() => {});
+  // Already signed in? Say so and let the user choose — never skip the login page silently.
+  fetch('/api/staff/session', { cache: 'no-store' }).then(r => r.json()).then(s => {
+    if (!s.loggedIn || !s.required) return;
+    $('f').hidden = true;
+    $('already').hidden = false;
+    $('aUser').textContent = s.user || 'موظف';
+    $('aAv').textContent = (s.user || 'م').charAt(0).toUpperCase();
+    $('aUntil').textContent = s.expiresAt ? new Date(s.expiresAt).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : '—';
+    $('aGo').href = next;
+  }).catch(() => {});
   $('show').onclick = () => { const p = $('password'); p.type = p.type === 'password' ? 'text' : 'password'; $('show').textContent = p.type === 'password' ? 'إظهار' : 'إخفاء'; };
   $('f').onsubmit = async e => {
     e.preventDefault();
