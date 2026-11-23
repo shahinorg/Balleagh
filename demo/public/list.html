@@ -60,19 +60,27 @@
   .pager { display:flex; align-items:center; gap:8px; padding:10px 12px; font-size:13px; color:var(--muted); border-top:1px solid var(--border); }
   .pager .spacer { flex:1; }
 
-  /* details drawer */
-  .drawer-bg { position:fixed; inset:0; background:rgb(14 21 17/.35); z-index:800; opacity:0; pointer-events:none; transition:opacity .2s; }
+  /* details popup */
+  .drawer-bg { position:fixed; inset:0; background:rgb(14 21 17/.45); z-index:800; opacity:0; pointer-events:none; transition:opacity .2s; backdrop-filter:blur(2px); }
   .drawer-bg.open { opacity:1; pointer-events:auto; }
-  .drawer { position:fixed; top:0; bottom:0; left:0; width:min(520px,100%); background:var(--surface); z-index:801; box-shadow:var(--sh-lg); display:flex; flex-direction:column; transform:translateX(-102%); transition:transform .3s var(--ease-out, ease-out); }
-  .drawer.open { transform:none; }
-  .drawer header { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--border); }
-  .drawer header h3 { margin:0; font-size:18px; font-variant-numeric:tabular-nums; }
-  .drawer .body { flex:1; overflow-y:auto; padding:16px 18px 24px; display:grid; gap:14px; align-content:start; }
-  .drawer .info { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13.5px; }
+  .drawer { position:fixed; top:50%; left:50%; width:min(920px, calc(100% - 32px)); max-height:min(88vh, 860px); background:var(--surface); z-index:801; border-radius:20px; box-shadow:0 24px 70px rgb(14 21 17/.28); display:flex; flex-direction:column; overflow:hidden;
+    opacity:0; visibility:hidden; transform:translate(-50%,-48%) scale(.96); transition:opacity .2s, transform .28s var(--ease-spring, ease-out), visibility 0s .28s; }
+  .drawer.open { opacity:1; visibility:visible; transform:translate(-50%,-50%); transition:opacity .2s, transform .28s var(--ease-spring, ease-out), visibility 0s; }
+  .drawer header { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .drawer header h3 { margin:0; font-size:19px; font-variant-numeric:tabular-nums; }
+  .drawer .body { flex:1; overflow-y:auto; padding:18px 20px 22px; }
+  .dgrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
+  .dgrid > div { display:grid; gap:14px; align-content:start; min-width:0; }
+  .drawer .info { display:grid; grid-template-columns:auto 1fr; gap:7px 14px; font-size:13.5px; background:var(--surface-2); border-radius:14px; padding:12px 14px; margin:0; }
   .drawer .info dt { color:var(--muted); } .drawer .info dd { margin:0; }
-  .drawer .acts { display:flex; gap:8px; flex-wrap:wrap; padding:12px 18px; border-top:1px solid var(--border); }
+  .drawer .acts { display:flex; gap:8px; flex-wrap:wrap; padding:12px 20px; border-top:1px solid var(--border); background:var(--surface); }
   .drawer h4 { margin:0 0 6px; font-size:14px; }
-  .drawer .gallery img, .drawer .gallery video { max-height:220px; width:100%; object-fit:cover; border-radius:12px; }
+  .drawer .gallery img, .drawer .gallery video { max-height:240px; width:100%; object-fit:cover; border-radius:12px; }
+  @media (max-width:760px) {
+    .drawer { top:auto; bottom:0; left:0; width:100%; max-height:92vh; border-radius:20px 20px 0 0; transform:translateY(100%); }
+    .drawer.open { transform:none; }
+    .dgrid { grid-template-columns:1fr; }
+  }
 
   @media (max-width:1100px) { .rl .c-unit, .rl .c-when { display:none; } }
   @media (max-width:760px) {
@@ -225,20 +233,21 @@ document.querySelector('.rl thead').onclick = e => { const th = e.target.closest
 $('pager').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; page += Number(b.dataset.p); render(); document.querySelector('.tablebox').scrollIntoView({ block: 'start', behavior: 'smooth' }); };
 $('rows').onclick = e => { if (e.target.closest('a')) return; const tr = e.target.closest('tr[data-id]'); if (tr) openReport(tr.dataset.id); };
 
-// drawer
+// details popup
 async function openReport(id) {
   selected = id;
   document.querySelectorAll('#rows tr').forEach(tr => tr.classList.toggle('sel', tr.dataset.id === id));
   history.replaceState(null, '', `?id=${encodeURIComponent(id)}`);
-  $('dTitle').textContent = '…'; $('dBadges').innerHTML = ''; $('dBody').innerHTML = '<div class="skel" style="height:180px"></div><div class="skel" style="height:90px"></div>'; $('dActs').innerHTML = '';
+  $('dTitle').textContent = '…'; $('dBadges').innerHTML = ''; $('dBody').innerHTML = '<div class="dgrid"><div><div class="skel" style="height:200px"></div><div class="skel" style="height:140px"></div></div><div><div class="skel" style="height:90px"></div><div class="skel" style="height:220px"></div></div></div>'; $('dActs').innerHTML = '';
   $('drawer').classList.add('open'); $('dbg').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false');
+  $('dClose').focus({ preventScroll: true });
   let r;
   try { r = await api('/api/reports/' + encodeURIComponent(id)); } catch (err) { $('dBody').innerHTML = `<div class="empty">${esc(err.message)}</div>`; return; }
   if (selected !== id) return;
   $('dTitle').textContent = r.code;
   $('dBadges').innerHTML = statusBadge(r.status) + priorityBadge(r.priority);
   const rep = r.reporter ? (r.reporter.hidden ? 'مخفي عن الوحدة' : `${esc(r.reporter.name || '')}${r.reporter.phone ? ` <span class="num" dir="ltr">${esc(r.reporter.phone)}</span>` : ''}`) : '—';
-  $('dBody').innerHTML = `
+  $('dBody').innerHTML = `<div class="dgrid"><div>
     ${r.media?.length ? gallery(r.media) : ''}
     ${slaBar(r)}
     <dl class="info">
@@ -252,11 +261,11 @@ async function openReport(id) {
       ${r.resolveDueAt ? `<dt>موعد الحل</dt><dd class="num">${esc(dt(r.resolveDueAt))}</dd>` : ''}
       ${r.duplicateCount ? `<dt>بلاغات مكررة</dt><dd>${r.duplicateCount} بلاغ إضافي عن نفس المشكلة</dd>` : ''}
       ${r.stars != null ? `<dt>تقييم المواطن</dt><dd>${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</dd>` : ''}
-    </dl>
+    </dl></div><div>
     ${r.description ? `<div><h4>وصف المواطن</h4><div class="small" style="line-height:1.8">${esc(r.description)}</div></div>` : ''}
     ${r.resolution ? `<div><h4>تقرير الحل</h4><div class="small" style="line-height:1.8">${esc(r.resolution.actionTaken || '')}${r.resolution.executingParty ? ` — ${esc(r.resolution.executingParty)}` : ''}</div></div>` : ''}
     ${r.rejection ? `<div><h4>سبب الرفض</h4><div class="small">${esc(r.rejection.reason || '')}</div></div>` : ''}
-    <div><h4>السجل الزمني</h4>${timeline(r.events || [])}</div>`;
+    <div><h4>السجل الزمني</h4>${timeline(r.events || [])}</div></div></div>`;
   $('dActs').innerHTML = `<a class="btn sm" href="/report.html?id=${encodeURIComponent(r.id)}" target="_blank">تقرير رسمي PDF</a>
     <a class="btn secondary sm" href="/map.html?report=${encodeURIComponent(r.id)}">${PIN} اذهب للخريطة</a>
     <a class="btn ghost sm" href="https://www.google.com/maps?q=${r.location[1]},${r.location[0]}" target="_blank" rel="noopener">Google Maps</a>`;
