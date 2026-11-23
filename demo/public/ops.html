@@ -53,8 +53,6 @@
   
   <span class="spacer"></span>
   <div class="seg" id="period"><button data-d="7">7 أيام</button><button data-d="30" class="on">30 يوم</button><button data-d="60">60 يوم</button></div>
-  <button class="icon-btn" id="sound" title="صوت التنبيه"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6"/></svg></button>
-  <button class="icon-btn" id="pilotBtn" title="المنطقة التجريبية: بني صالح وزاوية الكرادسة + السيليين" style="color:#D98A0C;font-size:18px">★</button>
   <button class="btn secondary sm" id="social" title="إدخال بلاغ من السوشيال ميديا">+ سوشيال</button>
 
 </header>
@@ -127,8 +125,7 @@ function legendHtml() {
 const map = createMap('map');
 await new Promise(r => map.on('load', r));
 addUnits(map, geo.units);
-const pilotBB = addPilot(map, geo.units, M.settings.pilotUnits || []);
-document.getElementById('pilotBtn').onclick = () => pilotBB && map.fitBounds(pilotBB, { padding: 90, maxZoom: 13.5 });
+addPilot(map, geo.units, M.settings.pilotUnits || []);
 addReports(map, reportsToFC([]));
 hoverUnits(map, p => {
   const u = kpis?.units.find(x => x.id === p.id);
@@ -258,10 +255,6 @@ const vis = (ids, on) => ids.forEach(id => map.setLayoutProperty(id, 'visibility
 document.getElementById('lyPts').onchange = e => vis(['pts', 'pts-halo'], e.target.checked);
 document.getElementById('lyHeat').onchange = e => vis(['heat'], e.target.checked);
 document.getElementById('lyUnits').onchange = e => vis(['units-fill'], e.target.checked);
-const soundBtn = document.getElementById('sound');
-const paintSound = () => soundBtn.innerHTML = icon(sound ? 'volume' : 'mute', 18);
-soundBtn.onclick = () => { sound = !sound; paintSound(); if (sound) chime(); };
-paintSound();
 
 // --- social media manual entry ---
 document.getElementById('social').onclick = async () => {
