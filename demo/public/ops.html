@@ -63,7 +63,6 @@
   
   <span class="spacer"></span>
   <div class="seg" id="period"><button data-d="7">7 أيام</button><button data-d="30" class="on">30 يوم</button><button data-d="60">60 يوم</button></div>
-  <button class="btn secondary sm" id="social" title="إدخال بلاغ من السوشيال ميديا">+ سوشيال</button>
 
 </header>
 <div class="kbar" id="kbar"></div>
@@ -268,37 +267,6 @@ const vis = (ids, on) => ids.forEach(id => map.setLayoutProperty(id, 'visibility
 document.getElementById('lyPts').onchange = e => vis(['pts', 'pts-halo'], e.target.checked);
 document.getElementById('lyHeat').onchange = e => vis(['heat'], e.target.checked);
 document.getElementById('lyUnits').onchange = e => vis(['units-fill'], e.target.checked);
-
-// --- social media manual entry ---
-document.getElementById('social').onclick = async () => {
-  let picked = null, mini;
-  const bg = modal({ title: 'إدخال بلاغ من السوشيال ميديا', body: `
-    <label class="field"><span>رابط المنشور</span><input class="input" id="sUrl" dir="ltr" placeholder="https://facebook.com/…"></label>
-    <label class="field"><span>التصنيف</span><select class="input" id="sCat">${M.categories.map(c => `<option value="${c.code}">${c.ar}</option>`).join('')}</select></label>
-    <label class="field"><span>الوصف</span><textarea class="input" id="sDesc"></textarea></label>
-    <label class="field"><span>لقطة شاشة / صورة</span><input type="file" id="sImg" accept="image/*" class="input"></label>
-    <div class="field"><span>حدّد الموقع على الخريطة</span><div id="sMap" style="height:220px;border-radius:12px;overflow:hidden"></div><div class="tiny muted" id="sLoc">اضغط على الخريطة</div></div>`,
-    actions: [{ label: 'إضافة البلاغ', onClick: async m => {
-      if (!picked) { toast('حدّد الموقع على الخريطة', 'err'); return false; }
-      const fd = new FormData();
-      fd.append('category', m.querySelector('#sCat').value); fd.append('description', m.querySelector('#sDesc').value);
-      fd.append('socialUrl', m.querySelector('#sUrl').value); fd.append('lng', picked[0]); fd.append('lat', picked[1]); fd.append('locationSource', 'manual');
-      const f = m.querySelector('#sImg').files[0]; if (f) fd.append('media', f);
-      const out = await api('/api/reports', { method: 'POST', form: fd });
-      toast(`تمت الإضافة ${out.code} — ${out.unitName || 'غرفة العمليات'}`, 'ok');
-    } }, { label: 'إلغاء', cls: 'ghost' }] });
-  setTimeout(() => {
-    mini = createMap('sMap', { zoom: 9 });
-    let mk;
-    mini.on('click', async e => {
-      picked = [e.lngLat.lng, e.lngLat.lat];
-      mk = mk || new maplibregl.Marker({ color: '#187535' }); mk.setLngLat(picked).addTo(mini);
-      const info = await api(`/api/locate?lng=${picked[0]}&lat=${picked[1]}`);
-      document.getElementById('sLoc').textContent = !info.inside ? 'خارج المحافظة' : info.unit ? `${info.village.name} — ${info.unit.name}` : info.noUnitArea;
-    });
-  }, 50);
-  await bg;
-};
 
 // --- audit ---
 const auditModal = async () => { // moved to /reports.html#audit

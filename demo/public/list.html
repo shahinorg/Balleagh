@@ -7,6 +7,7 @@
 <link rel="icon" href="/brand/ballegh-mark.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <link href="/css/app.css" rel="stylesheet">
 <style>
   .wrap { max-width:1440px; margin:0 auto; padding:18px 22px 50px; }
@@ -103,6 +104,7 @@
   <div class="head">
     <div><h1>البلاغات</h1><div class="sub" id="sub">جاري التحميل…</div></div>
     <span class="spacer"></span>
+    <button class="btn sm" id="social" title="إدخال بلاغ من السوشيال ميديا">+ بلاغ سوشيال</button>
     <button class="btn secondary sm" id="csv">تصدير Excel</button>
   </div>
   <div class="tabs" id="tabs"></div>
@@ -142,9 +144,11 @@
   <div class="acts" id="dActs"></div>
 </aside>
 
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script type="module">
-import { api, meta, useUser, esc, fmt, dur, dt, ago, mountNav, brandHtml, statusBadge, priorityBadge, slaBar, catAr, statusAr, priorityAr, timeline, gallery, toast } from '/js/common.js';
+import { createMap } from '/js/map.js';
+import { modal, api, meta, useUser, esc, fmt, dur, dt, ago, mountNav, brandHtml, statusBadge, priorityBadge, slaBar, catAr, statusAr, priorityAr, timeline, gallery, toast } from '/js/common.js';
 
 document.getElementById('brand').innerHTML = brandHtml(); mountNav('list');
 useUser((() => { try { return localStorage.getItem('ballegh:ops') || 'ops-sup'; } catch { return 'ops-sup'; } })());
@@ -278,6 +282,38 @@ function closeDrawer() {
 }
 $('dClose').onclick = closeDrawer; $('dbg').onclick = closeDrawer;
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && selected) closeDrawer(); });
+
+// --- social media manual entry ---
+document.getElementById('social').onclick = async () => {
+  let picked = null, mini;
+  const bg = modal({ title: 'إدخال بلاغ من السوشيال ميديا', body: `
+    <label class="field"><span>رابط المنشور</span><input class="input" id="sUrl" dir="ltr" placeholder="https://facebook.com/…"></label>
+    <label class="field"><span>التصنيف</span><select class="input" id="sCat">${M.categories.map(c => `<option value="${c.code}">${c.ar}</option>`).join('')}</select></label>
+    <label class="field"><span>الوصف</span><textarea class="input" id="sDesc"></textarea></label>
+    <label class="field"><span>لقطة شاشة / صورة</span><input type="file" id="sImg" accept="image/*" class="input"></label>
+    <div class="field"><span>حدّد الموقع على الخريطة</span><div id="sMap" style="height:220px;border-radius:12px;overflow:hidden"></div><div class="tiny muted" id="sLoc">اضغط على الخريطة</div></div>`,
+    actions: [{ label: 'إضافة البلاغ', onClick: async m => {
+      if (!picked) { toast('حدّد الموقع على الخريطة', 'err'); return false; }
+      const fd = new FormData();
+      fd.append('category', m.querySelector('#sCat').value); fd.append('description', m.querySelector('#sDesc').value);
+      fd.append('socialUrl', m.querySelector('#sUrl').value); fd.append('lng', picked[0]); fd.append('lat', picked[1]); fd.append('locationSource', 'manual');
+      const f = m.querySelector('#sImg').files[0]; if (f) fd.append('media', f);
+      const out = await api('/api/reports', { method: 'POST', form: fd });
+      toast(`تمت الإضافة ${out.code} — ${out.unitName || 'غرفة العمليات'}`, 'ok');
+      load();
+    } }, { label: 'إلغاء', cls: 'ghost' }] });
+  setTimeout(() => {
+    mini = createMap('sMap', { zoom: 9 });
+    let mk;
+    mini.on('click', async e => {
+      picked = [e.lngLat.lng, e.lngLat.lat];
+      mk = mk || new maplibregl.Marker({ color: '#187535' }); mk.setLngLat(picked).addTo(mini);
+      const info = await api(`/api/locate?lng=${picked[0]}&lat=${picked[1]}`);
+      document.getElementById('sLoc').textContent = !info.inside ? 'خارج المحافظة' : info.unit ? `${info.village.name} — ${info.unit.name}` : info.noUnitArea;
+    });
+  }, 50);
+  await bg;
+};
 
 // export
 $('csv').onclick = () => {
