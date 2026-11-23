@@ -197,7 +197,7 @@ button.uitem { width:100%; border:0; background:none; cursor:pointer; font:inher
 .rv { animation:rise .5s var(--ease-out) both; animation-delay:calc(var(--i,0) * 45ms); }
 @keyframes rise { from { opacity:0; transform:translateY(12px) scale(.985); } to { opacity:1; transform:none; } }
 .scr-in { animation:scrin .32s var(--ease-out) both; }
-@keyframes scrin { from { opacity:0; transform:translateX(-14px); } }
+@keyframes scrin { from { opacity:0; transform:translateY(10px); } }
 
 /* micro-interactions */
 .btn { transition:background .18s, color .18s, border-color .18s, box-shadow .2s, transform .12s var(--ease-out); }
