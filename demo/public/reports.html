@@ -71,7 +71,7 @@
       <label class="field"><span>المركز</span><select class="input" id="center"><option value="">كل المراكز</option></select></label>
       <label class="field"><span>الوحدة المحلية</span><select class="input" id="unit"><option value="">كل الوحدات</option></select></label>
       <label class="field"><span>التصنيف</span><select class="input" id="category"><option value="">كل التصنيفات</option></select></label>
-      <label class="field"><span>المصدر</span><select class="input" id="source"><option value="">الكل</option><option value="app">تطبيق المواطن</option><option value="social">سوشيال ميديا</option></select></label>
+      <label class="field"><span>المصدر</span><select class="input" id="source"><option value="">الكل</option><option value="app">تطبيق المواطن</option><option value="social">سوشيال ميديا</option><option value="chat">المحادثة</option></select></label>
       <span class="spacer"></span>
       <button class="btn secondary sm" id="csv">تصدير Excel</button>
       <button class="btn sm" id="print">طباعة / PDF</button>
@@ -311,7 +311,7 @@ const views = {
     return head('سجل البلاغات التفصيلي') + `<div class="hint no-print" style="margin-bottom:12px">بيعرض أول 500 بلاغ. «تصدير Excel» بينزّل كل البلاغات في الفترة بكل الحقول.</div>` + table([
       { t: 'رقم البلاغ', v: r => r.code, h: r => `<a href="/report.html?id=${r.id}" target="_blank" class="num">${esc(r.code)}</a>` }, { t: 'التاريخ', v: r => dt(r.createdAt), s: r => r.createdAt }, { t: 'التصنيف', v: r => catAr(r.category) },
       { t: 'الأولوية', v: r => priorityAr(r.priority), h: r => priorityBadge(r.priority) }, { t: 'الحالة', v: r => statusAr(r.status), h: r => statusBadge(r.status) }, { t: 'القرية', v: r => r.villageName || r.noUnitArea },
-      { t: 'الوحدة', v: r => r.unitName || 'غرفة العمليات' }, { t: 'المصدر', v: r => r.source === 'social' ? 'سوشيال' : 'التطبيق' }, { t: 'تكرار', v: r => r.duplicateCount + 1 },
+      { t: 'الوحدة', v: r => r.unitName || 'غرفة العمليات' }, { t: 'المصدر', v: r => r.source === 'social' ? 'سوشيال' : r.source === 'chat' ? 'المحادثة' : 'التطبيق' }, { t: 'تكرار', v: r => r.duplicateCount + 1 },
       { t: 'زمن الاستلام', v: r => r.acknowledgedAt ? dur(r.acknowledgedAt - r.createdAt) : '—', s: r => r.acknowledgedAt ? r.acknowledgedAt - r.createdAt : 1e15 },
       { t: 'في المدة', v: r => r.resolvedAt ? (r.resolvedAt <= r.resolveDueAt ? 'نعم' : 'لا') : '' }, { t: 'التقييم', v: r => r.stars ? '★'.repeat(r.stars) : '' },
     ], list.slice(0, 500));

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { CATEGORIES, DEFAULT_SETTINGS, DEFAULT_CONTENT, OPEN_STATUSES, PRIORITIES } from './config.js';
+import { CATEGORIES, DEFAULT_SETTINGS, DEFAULT_CONTENT, DEFAULT_KEYWORDS, OPEN_STATUSES, PRIORITIES } from './config.js';
 import { locate, distanceM, buildGeo } from './geo.js';
 
 // DATA_DIR env lets hosting keep data outside the code folder so redeploys don't wipe it
@@ -61,7 +61,7 @@ export function replaceAll(next) {
 export function ensureDefaults() {
   db.settings = { ...structuredClone(DEFAULT_SETTINGS), ...db.settings };
   if (!db.categories) db.categories = structuredClone(CATEGORIES);
-  db.categories.forEach(c => { if (c.active === undefined) c.active = true; });
+  db.categories.forEach(c => { if (c.active === undefined) c.active = true; if (!Array.isArray(c.keywords)) c.keywords = DEFAULT_KEYWORDS[c.code] || []; });
   db.content = { ...structuredClone(DEFAULT_CONTENT), ...(db.content || {}) };
   if (!db.unitMeta) db.unitMeta = {};
 }

@@ -62,6 +62,49 @@
   .otp input { width:56px; height:60px; text-align:center; font-size:26px; font-weight:700; border:1.5px solid var(--border); border-radius:12px; }
   .sso { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .lang { position:absolute; top:14px; left:16px; }
+  /* ---- guided chat ---- */
+  .chatcta { margin-top:10px; }
+  .chatcta .ic { background:var(--gold-500); color:#3B2600; }
+  .chatwrap { flex:1; display:flex; flex-direction:column; min-height:0; }
+  .chatlog { flex:1; overflow-y:auto; padding:14px 12px 10px; display:flex; flex-direction:column; gap:8px; background:#EAF1EC; background-image:radial-gradient(circle at 1px 1px, rgb(24 117 53/.06) 1px, transparent 0); background-size:18px 18px; }
+  .msg { max-width:86%; padding:9px 13px; border-radius:16px; font-size:15px; line-height:1.7; box-shadow:0 1px 1.5px rgb(0 0 0/.06); animation:mpop .18s ease-out; word-wrap:break-word; }
+  @keyframes mpop { from { opacity:0; transform:translateY(6px); } }
+  .msg.bot { align-self:flex-start; background:#fff; border-start-start-radius:4px; }
+  .msg.me { align-self:flex-end; background:var(--primary); color:#fff; border-start-end-radius:4px; }
+  .msg.me audio { display:block; margin-top:6px; max-width:220px; height:34px; }
+  .msg a { color:var(--primary); font-weight:600; }
+  .msg.typing { display:flex; gap:4px; padding:13px 15px; }
+  .msg.typing i { width:7px; height:7px; border-radius:50%; background:#9AAB9F; animation:tdot 1s infinite; }
+  .msg.typing i:nth-child(2) { animation-delay:.15s; } .msg.typing i:nth-child(3) { animation-delay:.3s; }
+  @keyframes tdot { 0%,60%,100% { opacity:.3; transform:none; } 30% { opacity:1; transform:translateY(-3px); } }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; align-self:flex-start; max-width:96%; animation:mpop .2s ease-out; }
+  .chip { border:1.5px solid var(--primary); color:var(--primary); background:#fff; border-radius:999px; padding:7px 14px; font:inherit; font-size:14px; cursor:pointer; }
+  .chip:hover { background:var(--primary-soft); }
+  .chip.primary { background:var(--primary); color:#fff; }
+  .chip.danger { border-color:#DC2626; color:#B91C1C; }
+  .chatbar { display:flex; gap:6px; align-items:center; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid var(--border); }
+  .chatbar input { flex:1; min-width:0; height:44px; border:1px solid var(--border); border-radius:999px; padding:0 16px; font:inherit; font-size:15px; outline:none; background:var(--surface-2); }
+  .chatbar input:focus { border-color:var(--primary); background:#fff; }
+  .chatbar input:disabled { opacity:.6; }
+  .chatbar .cb { width:44px; height:44px; flex:none; border-radius:50%; border:0; display:grid; place-items:center; background:var(--surface-2); color:var(--primary); cursor:pointer; }
+  .chatbar .cb.send { background:var(--primary); color:#fff; }
+  .chatbar .cb:disabled { opacity:.4; cursor:default; }
+  .chatbar .cb.rec { background:#DC2626; color:#fff; animation:blink 1s infinite; }
+  .mthumbs { display:grid; grid-template-columns:repeat(3,64px); gap:4px; }
+  .mthumbs img, .mthumbs video { width:64px; height:64px; object-fit:cover; border-radius:10px; display:block; }
+  .mthumbs.sm { grid-template-columns:repeat(5,40px); margin:4px 0; }
+  .mthumbs.sm img, .mthumbs .vt { width:40px; height:40px; border-radius:8px; object-fit:cover; display:grid; place-items:center; background:var(--surface-2); }
+  .sumcard { display:grid; gap:6px; min-width:230px; }
+  .sumcard .st { font-weight:700; color:var(--primary); margin-bottom:2px; }
+  .sumcard .sr { display:grid; grid-template-columns:22px 1fr; gap:6px; font-size:14px; line-height:1.55; }
+  .emgl { display:grid; gap:6px; margin:8px 0 6px; }
+  .emgl a { display:flex; justify-content:space-between; gap:10px; background:#FDECEC; color:#991B1B !important; border:1px solid #F6C1C1; border-radius:12px; padding:8px 12px; text-decoration:none; }
+  .mylist { display:grid; gap:6px; margin-top:6px; }
+  .mylist a { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--surface-2); border-radius:10px; padding:8px 10px; text-decoration:none; color:var(--text) !important; font-weight:400; }
+  .csep { align-self:center; font-size:12px; color:var(--muted); background:rgb(255 255 255/.7); border-radius:999px; padding:3px 12px; margin:6px 0; }
+  .sheet { position:absolute; inset:0; background:rgb(14 21 17/.45); z-index:50; display:flex; align-items:flex-end; }
+  .sheet .sh { background:#fff; width:100%; border-radius:20px 20px 0 0; padding:14px; display:grid; gap:10px; animation:mpop .2s ease-out; }
+  #smap { height:320px; border-radius:14px; overflow:hidden; }
 </style>
 </head>
 <body>
@@ -85,7 +128,7 @@ function appbar(title, back) { return `<div class="appbar">${back ? `<button cla
 $app.addEventListener('click', e => { if (e.target.closest('[data-back]')) history.back(); });
 
 // --- simple hash router ---
-const routes = { '': home, login, new: step1, media: step2, location: step3, done: doneScreen, report: reportScreen };
+const routes = { '': home, login, new: step1, media: step2, location: step3, done: doneScreen, report: reportScreen, chat: chatScreen };
 window.addEventListener('hashchange', route);
 function go(h) { location.hash = h; }
 function route() {
@@ -134,9 +177,11 @@ async function home() {
   render(`<div class="hero"><div class="row"><img src="/brand/ballegh-mark.svg" width="30" style="filter:brightness(0) invert(1)" alt=""><b style="font-size:20px">بلّغ</b><span class="spacer"></span><button class="icon-btn" id="logout" style="background:transparent;border-color:rgb(255 255 255/.3);color:#fff" aria-label="خروج">${icon('logout', 18)}</button></div>
       <h2>أهلاً ${esc(user.name || '')}</h2><p>صوّر المشكلة، والوحدة المحلية المختصة هتستلمها فوراً.</p></div>
     <button class="bigcta" id="new"><span class="ic">${icon('plus', 28)}</span><span><b>بلاغ جديد</b><span class="muted small">3 خطوات بس: النوع، الصور، الموقع</span></span></button>
+    <button class="bigcta chatcta" id="chatGo"><span class="ic">${icon('chat', 26)}</span><span><b>بلّغ بالمحادثة</b><span class="muted small">اكتب أو اتكلم، والمساعد يكمّل معاك</span></span></button>
     <button class="emerg" id="emerg">${icon('alert', 20)} بلاغ طوارئ (حريق / انهيار)</button>
     <div class="pad"><div class="row"><h3 style="margin:8px 0;font-size:16px">بلاغاتي</h3><span class="spacer"></span><span class="muted small" id="cnt"></span></div><div class="stack" id="mine"><div class="muted small">جاري التحميل…</div></div></div>`);
   document.getElementById('new').onclick = () => { resetDraft(); go('new'); };
+  document.getElementById('chatGo').onclick = () => go('chat');
   document.getElementById('emerg').onclick = () => { resetDraft(); draft.category = 'emergency'; emergencySheet(); };
   document.getElementById('logout').onclick = () => { setUser(null, 'citizen'); user = null; go('login'); };
   const queued = getQueue();
@@ -151,7 +196,7 @@ async function home() {
   } catch (e) { document.getElementById('mine').innerHTML = `<div class="danger-note">${esc(e.message)}</div>`; }
 }
 
-function resetDraft() { Object.assign(draft, { category: null, files: [], description: '', answers: {}, audio: null, loc: null, locInfo: null }); startGps(); }
+function resetDraft() { Object.assign(draft, { category: null, files: [], description: '', answers: {}, audio: null, loc: null, locInfo: null, source: 'app' }); startGps(); }
 
 function emergencySheet() {
   render(`${appbar('بلاغ طوارئ', true)}<div class="pad stack">
@@ -320,6 +365,7 @@ async function buildForm() {
   fd.append('lng', draft.loc.lng); fd.append('lat', draft.loc.lat);
   if (draft.loc.accuracy) fd.append('accuracy', draft.loc.accuracy);
   fd.append('locationSource', draft.loc.source);
+  fd.append('source', draft.source || 'app');
   const metaArr = [];
   for (const f of draft.files) {
     if (f.type.startsWith('image')) { fd.append('media', await watermark(f.file, draft.loc)); metaArr.push({ fromGallery: f.fromGallery, exifTakenAt: f.exifTakenAt, watermarked: true }); }
@@ -346,7 +392,7 @@ const toDataUrl = blob => new Promise(r => { const fr = new FileReader(); fr.onl
 async function enqueue() {
   const photos = [];
   for (const f of draft.files.filter(f => f.type.startsWith('image'))) photos.push({ data: await toDataUrl(await watermark(f.file, draft.loc)), fromGallery: f.fromGallery });
-  const q = getQueue(); q.push({ category: draft.category, description: draft.description, answers: draft.answers, loc: draft.loc, photos, createdOfflineAt: Date.now() });
+  const q = getQueue(); q.push({ category: draft.category, description: draft.description, answers: draft.answers, loc: draft.loc, photos, source: draft.source || 'app', createdOfflineAt: Date.now() });
   try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch { toast('مساحة التخزين ممتلئة', 'err'); }
 }
 async function flushQueue() {
@@ -357,6 +403,7 @@ async function flushQueue() {
       const fd = new FormData();
       fd.append('category', item.category); fd.append('description', item.description); fd.append('guidedAnswers', JSON.stringify(item.answers));
       fd.append('lng', item.loc.lng); fd.append('lat', item.loc.lat); fd.append('locationSource', item.loc.source);
+      if (item.source) fd.append('source', item.source);
       for (const p of item.photos) fd.append('media', await (await fetch(p.data)).blob(), 'photo.jpg');
       fd.append('mediaMeta', JSON.stringify(item.photos.map(p => ({ fromGallery: p.fromGallery, watermarked: true, createdOfflineAt: item.createdOfflineAt }))));
       await api('/api/reports', { method: 'POST', form: fd });
@@ -416,9 +463,355 @@ function rateBox(r) {
   });
 }
 
+// ---------- guided chat: «بلّغ بالمحادثة» ----------
+// Same report as the step-by-step form (same draft, buildForm, watermark, offline queue), asked as a conversation.
+// No AI: free text is matched against each category's keywords (editable in the CMS) and the citizen confirms.
+const STOP = Symbol('chat-stopped');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const $c = id => document.getElementById(id);
+const catObj = code => M.categories.find(c => c.code === code);
+const normAr = s => String(s || '').toLowerCase().replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
+function classify(text) {
+  const t = ` ${normAr(text)} `;
+  return M.categories.filter(c => c.active !== false && c.code !== 'other').map(c => {
+    let s = 0;
+    for (const k of c.keywords || []) { const nk = normAr(k); if (nk && t.includes(nk)) s += nk.split(' ').length + 1; }
+    return { c, s };
+  }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.c);
+}
+let chat = null;
+let chatContent = null;
+
+function chatScreen() {
+  render(`${appbar('مساعد البلاغات', true)}<div class="chatwrap">
+    <div class="chatlog" id="clog" aria-live="polite"></div>
+    <div class="chatbar">
+      <button class="cb" id="cMic" aria-label="تسجيل صوت">${icon('mic', 20)}</button>
+      <input id="cIn" placeholder="اكتب رسالتك…" autocomplete="off" enterkeyhint="send">
+      <button class="cb send" id="cSend" aria-label="إرسال">${icon('send', 20)}</button>
+    </div>
+    <input type="file" id="cCam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="cGal" accept="image/*" multiple hidden>
+    <input type="file" id="cVid" accept="video/*" capture="environment" hidden>
+  </div>`);
+  if (chat) chat.alive = false;
+  chat = { alive: true, resolve: null, textOk: false, myIds: new Set() };
+  $c('cSend').onclick = sendText;
+  $c('cIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendText(); } });
+  $c('cMic').onclick = micClick;
+  api('/api/reports').then(l => l.forEach(r => chat.myIds.add(r.id))).catch(() => {});
+  runChat();
+}
+addEventListener('hashchange', () => { if (chat && location.hash !== '#chat') chat.alive = false; });
+
+function scrollEnd() { const l = $c('clog'); if (l) l.scrollTop = l.scrollHeight; }
+async function bot(html, delay = 450) {
+  if (!chat?.alive) throw STOP;
+  const log = $c('clog');
+  const t = document.createElement('div');
+  t.className = 'msg bot typing'; t.innerHTML = '<i></i><i></i><i></i>';
+  log.appendChild(t); scrollEnd();
+  await sleep(delay);
+  if (!chat?.alive) throw STOP;
+  t.className = 'msg bot'; t.innerHTML = html; scrollEnd();
+  return t;
+}
+function me(html) { const d = document.createElement('div'); d.className = 'msg me'; d.innerHTML = html; $c('clog').appendChild(d); scrollEnd(); }
+
+// Show quick-reply chips and wait for a chip, typed text or a voice note
+function ask(chips = [], { text = true } = {}) {
+  if (!chat?.alive) return Promise.reject(STOP);
+  return new Promise(res => {
+    const log = $c('clog');
+    log.querySelectorAll('.chips').forEach(c => c.remove());
+    const box = document.createElement('div');
+    box.className = 'chips';
+    chips.forEach(ch => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = `chip ${ch.cls || ''}`; b.textContent = ch.label;
+      b.onclick = () => { if (!chat.resolve) return; me(esc(ch.label)); chat.resolve({ type: 'chip', value: ch.value }); };
+      box.appendChild(b);
+    });
+    if (chips.length) log.appendChild(box);
+    chat.textOk = text;
+    const inp = $c('cIn');
+    inp.disabled = !text; $c('cMic').disabled = !text; $c('cSend').disabled = !text;
+    inp.placeholder = text ? 'اكتب رسالتك… أو اضغط 🎤' : 'اختار من الأزرار اللي فوق 👆';
+    if (text && matchMedia('(pointer:fine)').matches) inp.focus();
+    scrollEnd();
+    chat.resolve = v => { chat.resolve = null; box.remove(); res(v); };
+  });
+}
+function sendText() {
+  const inp = $c('cIn'); const v = inp.value.trim();
+  if (!v || !chat?.resolve) return;
+  if (!chat.textOk) { toast('اختار من الأزرار اللي فوق 👆'); return; }
+  inp.value = ''; me(esc(v));
+  chat.resolve({ type: 'text', value: v });
+}
+
+// Voice: browser speech-to-text (Chrome/Edge/Android) → text; elsewhere a recorded voice note
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let srec = null, vrec = null;
+async function micClick() {
+  if (!chat?.resolve || !chat.textOk) return;
+  const btn = $c('cMic'), inp = $c('cIn');
+  if (SR) {
+    if (srec) { srec.stop(); return; }
+    srec = new SR(); srec.lang = 'ar-EG'; srec.interimResults = true; srec.maxAlternatives = 1;
+    btn.classList.add('rec'); inp.placeholder = 'بسمعك… اتكلم 🎙';
+    srec.onresult = e => { let t = ''; for (const r of e.results) t += r[0].transcript; inp.value = t; };
+    srec.onerror = e => toast(e.error === 'not-allowed' ? 'اسمح للمتصفح باستخدام الميكروفون' : 'مقدرتش أسمعك كويس — جرّب تاني أو اكتب', 'err');
+    srec.onend = () => { btn.classList.remove('rec'); srec = null; inp.placeholder = 'اكتب رسالتك… أو اضغط 🎤'; if (inp.value.trim()) sendText(); };
+    try { srec.start(); } catch { btn.classList.remove('rec'); srec = null; }
+    return;
+  }
+  if (vrec) { vrec.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    vrec = new MediaRecorder(stream);
+    vrec.ondataavailable = e => chunks.push(e.data);
+    vrec.onstop = () => {
+      stream.getTracks().forEach(t => t.stop()); btn.classList.remove('rec');
+      draft.audio = new Blob(chunks, { type: vrec.mimeType || 'audio/webm' }); vrec = null;
+      if (!chat?.resolve) return;
+      me(`🎤 رسالة صوتية<audio controls src="${URL.createObjectURL(draft.audio)}"></audio>`);
+      chat.resolve({ type: 'voice' });
+    };
+    vrec.start(); btn.classList.add('rec'); inp.placeholder = 'بيسجّل… اضغط تاني للإيقاف';
+    setTimeout(() => vrec?.state === 'recording' && vrec.stop(), 120000);
+  } catch { toast('مش قادر أوصل للميكروفون', 'err'); }
+}
+
+function emergencyHtml() {
+  const list = chatContent?.emergency?.length ? chatContent.emergency : [{ name: 'الحماية المدنية', number: '180' }, { name: 'الإسعاف', number: '123' }, { name: 'شرطة النجدة', number: '122' }];
+  return `<b style="color:#B91C1C">⚠️ لو فيه خطر على حياة حد، اتصل فوراً:</b><div class="emgl">${list.map(e => `<a href="tel:${esc(e.number)}">${esc(e.name)} <b class="num">${esc(e.number)}</b></a>`).join('')}</div><span class="tiny muted">وأنا هكمّل معاك البلاغ علشان يوصل لغرفة العمليات والمحافظ فوراً.</span>`;
+}
+
+const TOP_CATS = ['garbage', 'sewage', 'water', 'lighting', 'roads', 'agri_encroach'];
+async function pickAnyCat(prompt = 'اختار نوع المشكلة:') {
+  await bot(prompt, 250);
+  const a = await ask(M.categories.filter(c => c.active !== false).map(c => ({ label: c.ar, value: c.code, cls: c.emergency ? 'danger' : '' })), { text: false });
+  return catObj(a.value);
+}
+async function chatCategory() {
+  await bot('قولي إيه المشكلة؟ اكتب أو اتكلم 🎤 — أو اختار من تحت:');
+  const a = await ask([...TOP_CATS.filter(catObj).map(c => ({ label: catAr(c), value: 'cat:' + c })), { label: 'حاجة تانية…', value: 'more' }]);
+  if (a.type === 'chip') return a.value === 'more' ? pickAnyCat() : catObj(a.value.slice(4));
+  if (a.type === 'voice') return pickAnyCat('وصلني تسجيلك الصوتي 👍 وهيتبعت مع البلاغ. اختار نوع المشكلة:');
+  draft.description = a.value;
+  const found = classify(a.value);
+  if (found.some(c => c.emergency)) await bot(emergencyHtml(), 300);
+  if (!found.length) return pickAnyCat('مقدرتش أحدد نوع المشكلة من الكلام 🙏 اختار النوع من القائمة:');
+  await bot(`فهمت إنها <b>${esc(found[0].ar)}</b>، صح؟`);
+  const b = await ask([{ label: 'أيوه ✅', value: 'yes', cls: 'primary' }, ...(found[1] ? [{ label: found[1].ar, value: found[1].code }] : []), { label: 'لأ، أختار النوع', value: 'more' }], { text: false });
+  if (b.value === 'yes') return found[0];
+  if (b.value === 'more') return pickAnyCat();
+  return catObj(b.value);
+}
+
+function pickFiles(id) {
+  return new Promise(res => {
+    const inp = $c(id); inp.value = '';
+    let done = false;
+    const finish = files => { if (done) return; done = true; res(files); };
+    inp.onchange = () => finish([...inp.files]);
+    inp.oncancel = () => finish([]);
+    addEventListener('focus', function f() { removeEventListener('focus', f); setTimeout(() => finish([...inp.files]), 700); });
+    inp.click();
+  });
+}
+async function chatMedia() {
+  await bot('ممكن تصوّر المشكلة؟ الصورة بتساعد الوحدة تتحرك أسرع 📷');
+  for (;;) {
+    const imgs = draft.files.filter(f => f.type.startsWith('image')).length;
+    const hasVid = draft.files.some(f => f.type.startsWith('video'));
+    if (hasVid || imgs >= 5) break;
+    const chips = [{ label: '📷 كاميرا', value: 'cCam' }, { label: '🖼 من المعرض', value: 'cGal' }];
+    if (!draft.files.length) chips.push({ label: '🎥 فيديو', value: 'cVid' });
+    chips.push(draft.files.length ? { label: 'كده تمام ✅', value: 'done', cls: 'primary' } : { label: 'تخطّي', value: 'done' });
+    const a = await ask(chips, { text: false });
+    if (a.value === 'done') break;
+    const files = await pickFiles(a.value);
+    if (!files.length) { await bot('محصلش اختيار — تحب تجرب تاني؟', 200); continue; }
+    const before = draft.files.length;
+    for (const f of files) {
+      if (f.type.startsWith('video')) {
+        if (draft.files.length) { await bot('الفيديو بيتبعت لوحده من غير صور 🙏', 200); continue; }
+        const ok = await new Promise(r => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => r(v.duration <= 300); v.onerror = () => r(true); v.src = URL.createObjectURL(f); });
+        if (!ok) { await bot('مدة الفيديو أكتر من 5 دقايق 🙏', 200); continue; }
+        draft.files.push({ file: f, type: f.type, fromGallery: false });
+      } else if (draft.files.filter(x => x.type.startsWith('image')).length < 5) {
+        draft.files.push({ file: f, type: f.type, fromGallery: a.value === 'cGal', exifTakenAt: a.value === 'cGal' ? f.lastModified : null });
+      }
+    }
+    const added = draft.files.slice(before);
+    if (!added.length) continue;
+    me(`<div class="mthumbs">${added.map(f => f.type.startsWith('video') ? `<video src="${URL.createObjectURL(f.file)}" muted></video>` : `<img src="${URL.createObjectURL(f.file)}" alt="">`).join('')}</div>`);
+    const n = draft.files.filter(f => f.type.startsWith('image')).length;
+    await bot(draft.files.some(f => f.type.startsWith('video')) ? 'وصل الفيديو 👍' : `وصلت ${n === 1 ? 'الصورة' : n + ' صور'} 👍${n < 5 ? ' تحب تضيف كمان؟' : ''}`, 300);
+  }
+}
+
+function getGps() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej(new Error('no-geo'));
+    navigator.geolocation.getCurrentPosition(p => res({ lng: p.coords.longitude, lat: p.coords.latitude, accuracy: Math.round(p.coords.accuracy), source: 'gps' }), rej, { enableHighAccuracy: true, timeout: 12000 });
+  });
+}
+async function chatDemoPoint() {
+  const g = await api('/api/geo');
+  const pilot = M.settings.pilotUnits || [];
+  const vs = g.villages.features.filter(f => pilot.includes(f.properties.unitId));
+  const pool = vs.length ? vs : g.villages.features.filter(f => f.properties.kind === 'قرية');
+  const v = pool[Math.floor(Math.random() * pool.length)].properties;
+  for (let i = 0; i < 8; i++) {
+    const x = v.lng + (Math.random() - 0.5) * 0.008, y = v.lat + (Math.random() - 0.5) * 0.008;
+    const info = await api(`/api/locate?lng=${x}&lat=${y}`);
+    if (info.unit && info.unit.id === v.unitId) return { lng: x, lat: y, accuracy: 8, source: 'gps' };
+  }
+  return { lng: v.lng, lat: v.lat, accuracy: 8, source: 'gps' };
+}
+function mapSheet() {
+  return new Promise(res => {
+    const sh = document.createElement('div');
+    sh.className = 'sheet';
+    sh.innerHTML = `<div class="sh"><div class="row"><b>اضغط على مكان المشكلة</b><span class="spacer"></span><button class="icon-btn" data-x aria-label="إلغاء">${icon('x', 18)}</button></div><div id="smap"></div><button class="btn lg block" id="sOk" disabled>تأكيد المكان</button></div>`;
+    document.querySelector('.device').appendChild(sh);
+    let picked = null, mk = null;
+    const close = v => { sh.remove(); res(v); };
+    sh.querySelector('[data-x]').onclick = () => close(null);
+    sh.querySelector('#sOk').onclick = () => close(picked);
+    try {
+      const m = createMap('smap', { zoom: 10 });
+      m.on('click', e => {
+        picked = { lng: e.lngLat.lng, lat: e.lngLat.lat, source: 'manual' };
+        mk = mk || new maplibregl.Marker({ color: '#187535' });
+        mk.setLngLat([picked.lng, picked.lat]).addTo(m);
+        sh.querySelector('#sOk').disabled = false;
+      });
+    } catch { toast('الخريطة مش متاحة دلوقتي', 'err'); close(null); }
+  });
+}
+async function chatLocation() {
+  await bot('إنت دلوقتي في مكان المشكلة؟');
+  for (;;) {
+    const a = await ask([{ label: '📍 أيوه، خد موقعي', value: 'gps', cls: 'primary' }, { label: '🗺 أحدده على الخريطة', value: 'map' }, { label: '🧪 موقع تجريبي', value: 'demo' }], { text: false });
+    let loc = null;
+    if (a.value === 'gps') loc = await getGps().catch(() => null);
+    if (a.value === 'demo') loc = await chatDemoPoint().catch(() => null);
+    if (a.value === 'map') loc = await mapSheet();
+    if (!loc) { await bot(a.value === 'gps' ? 'مقدرتش أوصل لموقعك 😕 شغّل الـ GPS، أو حدده على الخريطة.' : 'متحددش مكان. نجرب تاني؟', 250); continue; }
+    const info = await api(`/api/locate?lng=${loc.lng}&lat=${loc.lat}`);
+    if (!info.inside) { await bot('المكان ده خارج محافظة الفيوم 🙏 حدد مكان المشكلة جوه المحافظة.', 250); continue; }
+    draft.loc = loc; draft.locInfo = info;
+    await bot(info.unit
+      ? `📍 إنت في <b>${esc(info.village.name)}</b> — ${esc(info.center.name)}.<br>البلاغ هيروح لـ <b>${esc(info.unit.name)}</b>.`
+      : `📍 المكان ده (<b>${esc(info.noUnitArea)}</b>) بيتبع المحافظة مباشرة — البلاغ هيروح لغرفة العمليات.`, 300);
+    return;
+  }
+}
+async function chatNearby() {
+  try {
+    const n = await api(`/api/nearby?lng=${draft.loc.lng}&lat=${draft.loc.lat}&category=${encodeURIComponent(draft.category)}`);
+    if (n.found) await bot(`🔁 فيه بلاغ عن نفس المشكلة اتقدّم ${n.daysAgo === 0 ? 'النهارده' : n.daysAgo === 1 ? 'امبارح' : `من ${n.daysAgo} أيام`} على بعد ${n.distanceM} متر (وصله ${n.count} ${n.count > 1 ? 'بلاغات' : 'بلاغ'}).<br>بلاغك هيتضم ليه، وده بيرفع أولويته 👍`, 300);
+  } catch {}
+}
+function summaryHtml() {
+  const c = catObj(draft.category);
+  const ans = Object.entries(draft.answers).filter(([, v]) => v);
+  const thumbs = draft.files.slice(0, 5).map(f => f.type.startsWith('video') ? '<span class="vt">🎥</span>' : `<img src="${URL.createObjectURL(f.file)}" alt="">`).join('');
+  const where = draft.locInfo?.unit ? `${esc(draft.locInfo.village.name)} ← ${esc(draft.locInfo.unit.name)}` : esc(draft.locInfo?.noUnitArea || '');
+  return `<div class="sumcard"><div class="st">ملخص بلاغك</div>
+    <div class="sr"><span>🗂</span><b>${esc(c?.ar || '')}</b></div>
+    ${draft.description ? `<div class="sr"><span>📝</span><span>${esc(draft.description)}</span></div>` : ''}
+    ${ans.map(([q, v]) => `<div class="sr"><span>❔</span><span>${esc(q)} <b>${esc(v)}</b></span></div>`).join('')}
+    ${draft.audio ? '<div class="sr"><span>🎤</span><span>وصف صوتي مرفق</span></div>' : ''}
+    <div class="sr"><span>📷</span><span>${draft.files.length ? `${draft.files.length} ${draft.files.some(f => f.type.startsWith('video')) ? 'فيديو' : draft.files.length > 1 ? 'صور' : 'صورة'}` : 'من غير صور'}</span></div>
+    ${thumbs ? `<div class="mthumbs sm">${thumbs}</div>` : ''}
+    <div class="sr"><span>📍</span><span>${where}</span></div></div>`;
+}
+async function chatSummary() {
+  for (;;) {
+    await bot(summaryHtml(), 350);
+    const a = await ask([{ label: '✅ إرسال', value: 'send', cls: 'primary' }, { label: '✏️ النوع', value: 'cat' }, { label: '✏️ الوصف', value: 'desc' }, { label: '📍 الموقع', value: 'loc' }], { text: false });
+    if (a.value === 'send') return chatSubmit();
+    if (a.value === 'cat') draft.category = (await pickAnyCat()).code;
+    if (a.value === 'desc') { await bot('اكتب الوصف الجديد (أو سجّل صوت 🎤):', 250); const d = await ask([]); if (d.type === 'text') draft.description = d.value; }
+    if (a.value === 'loc') { await chatLocation(); await chatNearby(); }
+  }
+}
+async function chatSubmit() {
+  const typing = await bot('جاري الإرسال…', 150);
+  if (!navigator.onLine) {
+    await enqueue();
+    typing.innerHTML = 'مفيش إنترنت دلوقتي 📶 اتحفظ البلاغ على الموبايل وهيتبعت لوحده أول ما النت يرجع.';
+    return chatEnd();
+  }
+  try {
+    const out = await api('/api/reports', { method: 'POST', form: await buildForm() });
+    chat.myIds.add(out.id);
+    typing.innerHTML = `اتبعت ✅<br>رقم بلاغك: <b class="num" dir="ltr">${esc(out.code)}</b><br>${out.duplicateOf ? 'اتضم لبلاغ سابق عن نفس المشكلة.' : out.unitName ? `وصل لـ <b>${esc(out.unitName)}</b>.` : 'وصل لغرفة العمليات بالمحافظة.'}<br><span class="tiny muted">هبعتلك هنا أول ما يحصل أي تحديث على بلاغك.</span>`;
+    scrollEnd();
+  } catch (e) {
+    typing.innerHTML = `حصلت مشكلة: ${esc(e.message)}`;
+    const a = await ask([{ label: '🔁 حاول تاني', value: 'retry', cls: 'primary' }, { label: '🏠 الرئيسية', value: 'home' }], { text: false });
+    if (a.value === 'retry') return chatSubmit();
+    return go('');
+  }
+  return chatEnd();
+}
+async function chatMine() {
+  const list = (await api('/api/reports')).slice(0, 5);
+  await bot(list.length ? `آخر بلاغاتك:<div class="mylist">${list.map(r => `<a href="#report/${r.id}"><b>${esc(catAr(r.category))}</b> ${statusBadge(r.status)}<span class="tiny muted num" dir="ltr">${esc(r.code)}</span></a>`).join('')}</div>` : 'لسه مقدمتش بلاغات.', 300);
+}
+async function chatEnd() {
+  for (;;) {
+    const a = await ask([{ label: '➕ بلاغ تاني', value: 'again', cls: 'primary' }, { label: '📋 بلاغاتي', value: 'mine' }, { label: '🏠 الرئيسية', value: 'home' }], { text: false });
+    if (a.value === 'home') return go('');
+    if (a.value === 'mine') { await chatMine(); continue; }
+    const sep = document.createElement('div'); sep.className = 'csep'; sep.textContent = 'بلاغ جديد'; $c('clog').appendChild(sep);
+    return runChat(true);
+  }
+}
+function chatNotify(r) {
+  if (!chat?.alive || !chat.myIds.has(r.id)) return;
+  const msg = { ACKNOWLEDGED: 'الوحدة المحلية استلمت بلاغك 👀', IN_PROGRESS: 'الوحدة بدأت الشغل على بلاغك 🛠', RESOLVED: 'الوحدة بتقول إن المشكلة اتحلت ✅ قيّم الحل', REJECTED: 'الوحدة رفضت البلاغ، وغرفة العمليات هتراجع الرفض', CLOSED: 'البلاغ اتقفل' }[r.status];
+  if (!msg) return;
+  bot(`📣 <b class="num" dir="ltr">${esc(r.code)}</b><br>${msg}${r.status === 'RESOLVED' ? `<br><a href="#report/${r.id}">افتح البلاغ وقيّم ←</a>` : ''}`, 300).catch(() => {});
+}
+
+async function runChat(again = false) {
+  resetDraft(); draft.source = 'chat';
+  try {
+    if (!chatContent) chatContent = await api('/api/content').catch(() => ({}));
+    if (!again) await bot(`أهلاً يا <b>${esc((user.name || '').split(' ')[0] || 'فندم')}</b> 👋 أنا مساعد «بلّغ»، وهساعدك تبلّغ عن أي مشكلة في منطقتك.`, 300);
+    const c = await chatCategory();
+    draft.category = c.code;
+    if (c.emergency && !draft.description) await bot(emergencyHtml(), 300);
+    for (const q of c.questions || []) {
+      await bot(esc(q), 350);
+      const a = await ask([{ label: 'تخطّي', value: 'skip' }]);
+      if (a.type === 'text') draft.answers[q] = a.value;
+    }
+    if (!draft.description && !draft.audio) {
+      await bot('اوصفلي المشكلة في جملة أو اتنين (أو سجّل صوت 🎤):', 350);
+      const a = await ask([{ label: 'تخطّي', value: 'skip' }]);
+      if (a.type === 'text') draft.description = a.value;
+    }
+    await chatMedia();
+    await chatLocation();
+    await chatNearby();
+    await chatSummary();
+  } catch (e) {
+    if (e !== STOP) { console.error(e); bot(`حصلت مشكلة غير متوقعة: ${esc(e.message || e)}`, 100).catch(() => {}); }
+  }
+}
+
 // live updates for my reports
 const sock = document.createElement('script'); sock.src = '/socket.io/socket.io.js';
-sock.onload = () => { const s = io(); s.on('report:update', () => { const [n, a] = location.hash.slice(1).split('/'); if (n === 'report') reportScreen(a); else if (!n) home(); }); };
+sock.onload = () => { const s = io(); s.on('report:update', r => { const [n, a] = location.hash.slice(1).split('/'); if (n === 'chat') chatNotify(r); else if (n === 'report') reportScreen(a); else if (!n) home(); }); };
 document.head.appendChild(sock);
 
 M = await meta();

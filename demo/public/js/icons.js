@@ -31,6 +31,8 @@ const P = {
   alert: '<path d="M12 3 2 20h20zM12 10v4M12 17v.5"/>',
   logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  send: '<path d="M3 11.5 21 3l-8.5 18-2.2-7.3z" transform="scale(-1 1) translate(-24 0)"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
 };
 export function icon(name, size = 22, extra = '') {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${P[name] || P.other}</svg>`;

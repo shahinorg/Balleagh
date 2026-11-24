@@ -9,7 +9,7 @@ export async function renderDetail(el, id, { role, actions = () => '', onAction,
   el.innerHTML = `<div class="detail stack" style="padding:16px">
     ${header}
     <div class="row wrap"><h2>${esc(catAr(r.category))}</h2><span class="spacer"></span>${statusBadge(r.status)} ${priorityBadge(r.priority)}</div>
-    <div class="small muted"><span class="num" dir="ltr">${esc(r.code)}</span> · ${dt(r.createdAt)} (${ago(r.createdAt)}) ${r.source === 'social' ? ' · <b style="color:#1D4ED8">مصدر: سوشيال ميديا</b>' : ''}</div>
+    <div class="small muted"><span class="num" dir="ltr">${esc(r.code)}</span> · ${dt(r.createdAt)} (${ago(r.createdAt)}) ${r.source === 'social' ? ' · <b style="color:#1D4ED8">مصدر: سوشيال ميديا</b>' : r.source === 'chat' ? ' · <b style="color:#B06E07">💬 مصدر: المحادثة</b>' : ''}</div>
     ${r.escalation >= 2 ? `<div class="danger-note">⚠ مُصعّد إلى: <b>${['', 'رئيس الوحدة', 'رئيس المركز', 'غرفة العمليات', 'المحافظ'][r.escalation]}</b></div>` : ''}
     ${r.duplicateCount ? `<div class="hint">🔁 اتبلّغ عن نفس المشكلة <b>${r.duplicateCount + 1}</b> مرات — البلاغات المكررة اتجمعت هنا.</div>` : ''}
     ${slaBar(r)}

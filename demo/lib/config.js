@@ -38,6 +38,24 @@ export const CATEGORIES = [
     questions: ['هل يوجد مصابون؟'] },
   { code: 'other', ar: 'أخرى', en: 'Other', priority: 'LOW', questions: [] },
 ];
+// Keywords the guided chat uses to suggest a category from free text (Egyptian Arabic, spelling variants).
+// Editable per category from the CMS. Matching normalizes alef/ya/ta-marbuta, so one spelling is enough.
+export const DEFAULT_KEYWORDS = {
+  garbage: ['زبالة', 'قمامة', 'مخلفات', 'نفايات', 'قاذورات', 'مقلب', 'كوم زبالة', 'ريحة وحشة'],
+  sewage: ['مجاري', 'مجارى', 'صرف', 'طفح', 'بالوعة', 'بلاعة', 'غطا البلاعة', 'مية سودا'],
+  water: ['مية الشرب', 'مياه الشرب', 'المية مقطوعة', 'انقطاع المية', 'ماسورة', 'مواسير', 'عكارة', 'مية'],
+  lighting: ['نور', 'إنارة', 'اناره', 'عمود', 'لمبة', 'كشاف', 'ضلمة', 'ظلام'],
+  roads: ['طريق', 'شارع', 'حفرة', 'مطب', 'رصف', 'أسفلت', 'هبوط', 'تكسير'],
+  agri_encroach: ['أرض زراعية', 'ارض زراعيه', 'تبوير', 'بيبنوا في الأرض', 'بناء على الزراعية', 'تعدي على الأرض', 'أعمدة خرسانة'],
+  illegal_build: ['بناء مخالف', 'مخالفة بناء', 'دور زيادة', 'أدوار مخالفة', 'من غير ترخيص', 'بدون ترخيص'],
+  state_land: ['أملاك دولة', 'أرض الدولة', 'أرض حكومة', 'وضع يد', 'تسوير'],
+  dredging: ['تجريف', 'لودر', 'حفار', 'رمل', 'طفلة', 'طمي', 'تعدين'],
+  canals: ['ترعة', 'مصرف', 'ردم', 'حشائش', 'ورد النيل', 'مسقة'],
+  dogs: ['كلاب', 'كلب', 'سعران', 'عضة'],
+  emergency: ['حريق', 'حريقة', 'نار', 'ولعت', 'انهيار', 'وقع البيت', 'بيت وقع', 'مصابين', 'ماس كهربائي'],
+  other: [],
+};
+CATEGORIES.forEach(c => { c.keywords = DEFAULT_KEYWORDS[c.code] || []; });
 export const CATEGORY = Object.fromEntries(CATEGORIES.map(c => [c.code, c]));
 
 export const DEFAULT_SETTINGS = {

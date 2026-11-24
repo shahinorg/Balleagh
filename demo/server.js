@@ -10,7 +10,7 @@ import compression from 'compression';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'node:url';
 import { DATA_DIR, db, load, save, createReport, act, runEscalation, userById, reportById, verifyAudit, httpError, audit, unitName, getCat } from './lib/store.js';
-import { buildGeo, locate } from './lib/geo.js';
+import { buildGeo, locate, distanceM } from './lib/geo.js';
 import { computeKpis } from './lib/kpi.js';
 import { PRIORITY_AR, STATUS_AR, OPEN_STATUSES } from './lib/config.js';
 import { seed } from './scripts/seed.js';
@@ -39,7 +39,7 @@ const SESSION_SECRET = crypto.createHash('sha256').update(`ballegh:${process.env
 const SESSION_MS = 12 * 3_600_000;
 const COOKIE = 'ballegh_staff';
 const STAFF_PAGES = /^\/(ops|list|unit|governor|admin|map|reports|report|demo|presentation)(\.html)?$/;
-const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health', '/api/staff/login', '/api/staff/logout', '/api/staff/session']);
+const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health', '/api/staff/login', '/api/staff/logout', '/api/staff/session', '/api/nearby']);
 const sameSecret = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const sign = exp => crypto.createHmac('sha256', SESSION_SECRET).update(`${ACCESS_USER}|${exp}`).digest('base64url');
 const cookieOf = (req, name) => (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(([k]) => k === name)?.slice(1).join('=');
@@ -181,6 +181,19 @@ app.get('/api/geo', wrap((_req, res) => {
   return body;
 }));
 app.get('/api/content', wrap(() => db.content));
+// Is there already an open report of this kind right here? (the chat tells the citizen before submitting)
+app.get('/api/nearby', wrap(req => {
+  const lng = Number(req.query.lng), lat = Number(req.query.lat), cat = String(req.query.category || '');
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || !cat) throw httpError(400, 'بيانات ناقصة');
+  const s = db.settings, now = Date.now();
+  let best = null;
+  for (const m of db.reports) {
+    if (m.masterId || m.category !== cat || !OPEN_STATUSES.includes(m.status) || m.createdAt < now - s.dupDays * 86_400_000) continue;
+    const d = distanceM(m.location, [lng, lat]);
+    if (d <= s.dupRadiusM && (!best || d < best.d)) best = { d, m };
+  }
+  return best ? { found: true, distanceM: Math.round(best.d), daysAgo: Math.floor((now - best.m.createdAt) / 86_400_000), count: best.m.duplicateCount + 1 } : { found: false };
+}));
 app.get('/api/locate', wrap(req => locate(Number(req.query.lng), Number(req.query.lat))));
 app.get('/api/users', wrap(req => db.users.filter(u => u.role !== 'CITIZEN' || u.id === 'c-demo').filter(u => !req.query.role || u.role === req.query.role)
   .filter(u => req.query.all || u.active !== false)
@@ -235,7 +248,7 @@ app.post('/api/reports', upload.array('media', 6), wrap(req => {
     citizenId: social ? null : u.id, category: b.category, description: b.description,
     guidedAnswers: b.guidedAnswers ? JSON.parse(b.guidedAnswers) : {}, lng: Number(b.lng), lat: Number(b.lat),
     accuracy: b.accuracy ? Number(b.accuracy) : null, locationSource: b.locationSource || 'gps', media,
-    source: social ? (b.source || 'social') : 'app', socialUrl: b.socialUrl, actorId: u.id, actorRole: u.role,
+    source: social ? (b.source || 'social') : (b.source === 'chat' ? 'chat' : 'app'), socialUrl: b.socialUrl, actorId: u.id, actorRole: u.role,
   });
   if (master) io.emit('report:update', view(master, { role: 'OPS_SUPERVISOR' }));
   else io.emit('report:new', view(report, { role: 'OPS_SUPERVISOR' }));
@@ -326,10 +339,11 @@ app.put('/api/categories', wrap(req => {
     codes.add(c.code);
     c.questions = (c.questions || []).map(q => String(q).trim()).filter(Boolean);
     c.active = c.active !== false;
+    c.keywords = (Array.isArray(c.keywords) ? c.keywords : String(c.keywords || '').split(/[\n،,]/)).map(k => String(k).trim()).filter(Boolean).slice(0, 60);
   }
   // a category used by reports can be deactivated but never deleted
   for (const old of db.categories) if (!codes.has(old.code) && db.reports.some(r => r.category === old.code)) throw httpError(409, `التصنيف «${old.ar}» عليه بلاغات — عطّله بدل الحذف`);
-  db.categories = list.map(c => ({ code: c.code, ar: c.ar.trim(), en: c.en || '', priority: c.priority, emergency: !!c.emergency, questions: c.questions, active: c.active }));
+  db.categories = list.map(c => ({ code: c.code, ar: c.ar.trim(), en: c.en || '', priority: c.priority, emergency: !!c.emergency, questions: c.questions, keywords: c.keywords, active: c.active }));
   audit({ actorId: u.id, actorRole: u.role, entity: 'categories', entityId: 'categories', action: 'categories_updated', note: `${db.categories.length} تصنيف` });
   save();
   return db.categories;
@@ -417,7 +431,7 @@ app.get('/api/export/reports', wrap((req, res) => {
   const d = t => t ? new Date(t).toISOString().replace('T', ' ').slice(0, 16) : '';
   const h = (a, b) => a && b ? ((b - a) / 3_600_000).toFixed(1) : '';
   const header = ['رقم البلاغ', 'تاريخ البلاغ', 'التصنيف', 'الحالة', 'الأولوية', 'القرية', 'الوحدة المحلية', 'المركز', 'المصدر', 'عدد التكرار', 'تاريخ الاستلام', 'ساعات الاستلام', 'تاريخ الحل', 'ساعات الحل', 'في المدة', 'التقييم', 'التصعيد', 'خط العرض', 'خط الطول'];
-  const lines = rows.sort((a, b) => a.createdAt - b.createdAt).map(r => [r.code, d(r.createdAt), getCat(r.category)?.ar || r.category, STATUS_AR[r.status], PRIORITY_AR[r.priority], r.villageName || r.noUnitArea || '', r.unitName || 'غرفة العمليات', r.centerName || '', r.source === 'social' ? 'سوشيال ميديا' : 'التطبيق', r.duplicateCount + 1, d(r.acknowledgedAt), h(r.routedAt || r.createdAt, r.acknowledgedAt), d(r.resolvedAt), h(r.routedAt || r.createdAt, r.resolvedAt), r.resolvedAt ? (r.resolvedAt <= r.resolveDueAt ? 'نعم' : 'لا') : '', r.rating?.stars || '', r.escalation || 0, r.location[1].toFixed(6), r.location[0].toFixed(6)]);
+  const lines = rows.sort((a, b) => a.createdAt - b.createdAt).map(r => [r.code, d(r.createdAt), getCat(r.category)?.ar || r.category, STATUS_AR[r.status], PRIORITY_AR[r.priority], r.villageName || r.noUnitArea || '', r.unitName || 'غرفة العمليات', r.centerName || '', r.source === 'social' ? 'سوشيال ميديا' : r.source === 'chat' ? 'المحادثة' : 'التطبيق', r.duplicateCount + 1, d(r.acknowledgedAt), h(r.routedAt || r.createdAt, r.acknowledgedAt), d(r.resolvedAt), h(r.routedAt || r.createdAt, r.resolvedAt), r.resolvedAt ? (r.resolvedAt <= r.resolveDueAt ? 'نعم' : 'لا') : '', r.rating?.stars || '', r.escalation || 0, r.location[1].toFixed(6), r.location[0].toFixed(6)]);
   const csv = '\uFEFF' + [header, ...lines].map(l => l.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\r\n');
   audit({ actorId: u.id, actorRole: u.role, entity: 'export', entityId: 'reports', action: 'reports_exported', note: `${lines.length} بلاغ` });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');

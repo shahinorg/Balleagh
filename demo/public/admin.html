@@ -127,19 +127,20 @@ const views = {
       <div class="card" style="padding:0;overflow-x:auto"><table class="t" id="ct"></table></div>
       <div><button class="btn secondary sm" id="add">+ إضافة تصنيف</button></div>`);
     const draw = () => {
-      document.getElementById('ct').innerHTML = `<thead><tr><th></th><th>الاسم</th><th>بالإنجليزي</th><th>الأولوية الأساسية</th><th>طوارئ</th><th>الأسئلة الموجّهة (سؤال في كل سطر)</th><th>مفعّل</th><th></th></tr></thead><tbody>${cats.map((x, i) => `<tr class="${x.active ? '' : 'off'}" data-i="${i}">
+      document.getElementById('ct').innerHTML = `<thead><tr><th></th><th>الاسم</th><th>بالإنجليزي</th><th>الأولوية الأساسية</th><th>طوارئ</th><th>الأسئلة الموجّهة (سؤال في كل سطر)</th><th title="الكلمات اللي المساعد بيتعرف منها على نوع المشكلة لما المواطن يكتب أو يتكلم">كلمات مفتاحية للمحادثة 💬</th><th>مفعّل</th><th></th></tr></thead><tbody>${cats.map((x, i) => `<tr class="${x.active ? '' : 'off'}" data-i="${i}">
         <td style="white-space:nowrap"><button class="icon-btn" data-up="${i}" style="width:26px;height:26px" ${i ? '' : 'disabled'}>▲</button><button class="icon-btn" data-dn="${i}" style="width:26px;height:26px" ${i < cats.length - 1 ? '' : 'disabled'}>▼</button></td>
         <td><input class="input" data-f="ar" value="${esc(x.ar)}" style="min-width:150px"></td>
         <td><input class="input" data-f="en" value="${esc(x.en || '')}" dir="ltr" style="min-width:110px"></td>
         <td><select class="input" data-f="priority">${prOpts(x.priority)}</select></td>
         <td><input type="checkbox" data-f="emergency" ${x.emergency ? 'checked' : ''}></td>
         <td><textarea class="input" data-f="questions" style="min-height:40px;min-width:220px">${esc((x.questions || []).join('\n'))}</textarea></td>
+        <td><textarea class="input" data-f="keywords" placeholder="كلمة في كل سطر أو بفاصلة" style="min-height:40px;min-width:200px">${esc((x.keywords || []).join('، '))}</textarea></td>
         <td><label class="switch"><input type="checkbox" data-f="active" ${x.active ? 'checked' : ''}><span></span></label></td>
         <td><button class="icon-btn" data-del="${i}" title="حذف">✕</button></td></tr>`).join('')}</tbody>`;
     };
     const read = () => document.querySelectorAll('#ct tbody tr').forEach(tr => {
       const x = cats[tr.dataset.i];
-      tr.querySelectorAll('[data-f]').forEach(el => { const f = el.dataset.f; x[f] = el.type === 'checkbox' ? el.checked : f === 'questions' ? el.value.split('\n').map(s => s.trim()).filter(Boolean) : el.value; });
+      tr.querySelectorAll('[data-f]').forEach(el => { const f = el.dataset.f; x[f] = el.type === 'checkbox' ? el.checked : f === 'questions' ? el.value.split('\n').map(s => s.trim()).filter(Boolean) : f === 'keywords' ? el.value.split(/[\n،,]/).map(s => s.trim()).filter(Boolean) : el.value; });
     });
     draw();
     c.addEventListener('click', e => {
@@ -147,7 +148,7 @@ const views = {
       if (t.dataset.up) { read(); const i = +t.dataset.up; [cats[i - 1], cats[i]] = [cats[i], cats[i - 1]]; draw(); }
       if (t.dataset.dn) { read(); const i = +t.dataset.dn; [cats[i + 1], cats[i]] = [cats[i], cats[i + 1]]; draw(); }
       if (t.dataset.del) { read(); cats.splice(+t.dataset.del, 1); draw(); document.getElementById('dirty').classList.remove('hidden'); }
-      if (t.id === 'add') { read(); cats.push({ code: '', ar: 'تصنيف جديد', en: '', priority: 'NORMAL', emergency: false, questions: [], active: true }); draw(); }
+      if (t.id === 'add') { read(); cats.push({ code: '', ar: 'تصنيف جديد', en: '', priority: 'NORMAL', emergency: false, questions: [], keywords: [], active: true }); draw(); }
     });
     document.getElementById('save').onclick = async () => {
       read();

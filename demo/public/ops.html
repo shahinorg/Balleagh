@@ -91,7 +91,7 @@
       <select class="input" id="fCat"><option value="">كل التصنيفات</option></select>
       <select class="input" id="fPrio"><option value="">كل الأولويات</option></select>
       <select class="input" id="fStatus"><option value="">كل الحالات</option><option value="open">المفتوحة فقط</option><option value="late">المتأخرة فقط</option><option value="escalated">المُصعّدة</option><option value="review">بانتظار مراجعة الغرفة</option></select>
-      <select class="input" id="fSrc"><option value="">كل المصادر</option><option value="app">تطبيق المواطن</option><option value="social">سوشيال ميديا</option></select>
+      <select class="input" id="fSrc"><option value="">كل المصادر</option><option value="app">تطبيق المواطن</option><option value="social">سوشيال ميديا</option><option value="chat">المحادثة</option></select>
       <button class="btn ghost sm" id="clear">مسح الفلاتر</button></div></div>
     <div class="grp"><h4>دليل الألوان</h4><div class="legend" id="legend"></div></div>
   </aside>
@@ -181,7 +181,7 @@ function itemHtml(r) {
   return `<div class="ritem ${selected === r.id ? 'on' : ''}" data-id="${r.id}"><img src="${esc(r.thumb || '/img/placeholder/other.svg')}" alt="" loading="lazy">
     <div><div class="row"><span class="t">${esc(catAr(r.category))}</span><span class="spacer"></span>${priorityBadge(r.priority)}</div>
     <div class="s">${esc(r.villageName || r.noUnitArea || '')} · ${esc(r.unitName || 'غرفة العمليات')}</div>
-    <div class="row" style="margin-top:3px">${statusBadge(r.status)}${r.duplicateCount ? `<span class="badge plain" style="background:#FEF3C7;color:#92400E">×${r.duplicateCount + 1}</span>` : ''}${r.source === 'social' ? '<span class="badge plain" style="background:#DBEAFE;color:#1D4ED8">سوشيال</span>' : ''}${r.escalation >= 3 ? '<span class="badge plain" style="background:#FDECEC;color:#B91C1C">مُصعّد</span>' : ''}<span class="spacer"></span><span class="tiny muted">${ago(r.createdAt)}</span></div>
+    <div class="row" style="margin-top:3px">${statusBadge(r.status)}${r.duplicateCount ? `<span class="badge plain" style="background:#FEF3C7;color:#92400E">×${r.duplicateCount + 1}</span>` : ''}${r.source === 'social' ? '<span class="badge plain" style="background:#DBEAFE;color:#1D4ED8">سوشيال</span>' : r.source === 'chat' ? '<span class="badge plain" style="background:#FEF3C7;color:#92400E">💬 محادثة</span>' : ''}${r.escalation >= 3 ? '<span class="badge plain" style="background:#FDECEC;color:#B91C1C">مُصعّد</span>' : ''}<span class="spacer"></span><span class="tiny muted">${ago(r.createdAt)}</span></div>
     ${OPEN.includes(r.status) ? `<div style="margin-top:4px">${slaBar(r)}</div>` : ''}</div></div>`;
 }
 document.getElementById('list').addEventListener('click', e => { const it = e.target.closest('.ritem'); if (it) select(it.dataset.id, true); });

@@ -92,7 +92,8 @@ export function seed({ seedValue = 20261120, reportsCount = 4500, now = Date.now
     // a few duplicate clusters
     let catFinal = cat, atFinal = at;
     if (rand() < 0.07 && items.length) { const prev = items[Math.max(0, items.length - 1 - Math.floor(rand() * 40))]; catFinal = prev.cat; atFinal = Math.min(now - 60000, prev.at + between(0.1, 3) * DAY); p = [prev.p[0] + between(-0.0002, 0.0002), prev.p[1] + between(-0.0002, 0.0002)]; }
-    items.push({ at: atFinal, cat: catFinal, p, citizen: pick(citizens), social: rand() < 0.05 });
+    const ch = rand();
+    items.push({ at: atFinal, cat: catFinal, p, citizen: pick(citizens), social: ch < 0.05, chat: ch >= 0.05 && ch < 0.17 });
   }
   // a few reports in areas without a unit
   for (let i = 0; i < 8; i++) {
@@ -116,7 +117,7 @@ export function seed({ seedValue = 20261120, reportsCount = 4500, now = Date.now
     try {
       res = createReport({
         citizenId: it.social ? null : it.citizen.id, category: it.cat, description: pick(DESCS[it.cat]),
-        lng: it.p[0], lat: it.p[1], accuracy: Math.round(between(4, 25)), source: it.social ? 'social' : 'app',
+        lng: it.p[0], lat: it.p[1], accuracy: Math.round(between(4, 25)), source: it.social ? 'social' : it.chat ? 'chat' : 'app',
         socialUrl: it.social ? 'https://facebook.com/groups/fayoum-villages/posts/demo' : null,
         actorId: it.social ? 'ops-rev' : it.citizen.id, actorRole: it.social ? 'OPS_REVIEWER' : 'CITIZEN',
         media: [{ kind: 'photo', url: `/img/placeholder/${it.cat}.svg`, fromGallery: rand() < 0.25 }],
