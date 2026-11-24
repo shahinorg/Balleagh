@@ -9,7 +9,8 @@ import multer from 'multer';
 import compression from 'compression';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'node:url';
-import { DATA_DIR, db, load, save, createReport, act, runEscalation, userById, reportById, verifyAudit, httpError, audit, unitName, getCat } from './lib/store.js';
+import { DATA_DIR, db, load, save, createReport, act, runEscalation, userById, reportById, verifyAudit, httpError, audit, unitName, getCat, setNotifier, reportRecipients, addNotification } from './lib/store.js';
+import webpush from 'web-push';
 import { buildGeo, locate, distanceM } from './lib/geo.js';
 import { computeKpis } from './lib/kpi.js';
 import { PRIORITY_AR, STATUS_AR, OPEN_STATUSES } from './lib/config.js';
@@ -39,7 +40,7 @@ const SESSION_SECRET = crypto.createHash('sha256').update(`ballegh:${process.env
 const SESSION_MS = 12 * 3_600_000;
 const COOKIE = 'ballegh_staff';
 const STAFF_PAGES = /^\/(ops|list|unit|governor|admin|map|reports|report|demo|presentation)(\.html)?$/;
-const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health', '/api/staff/login', '/api/staff/logout', '/api/staff/session', '/api/nearby']);
+const PUBLIC_API = new Set(['/api/meta', '/api/geo', '/api/locate', '/api/content', '/api/public/stats', '/api/auth/otp', '/api/auth/verify', '/api/health', '/api/staff/login', '/api/staff/logout', '/api/staff/session', '/api/nearby', '/api/push/key']);
 const sameSecret = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const sign = exp => crypto.createHmac('sha256', SESSION_SECRET).update(`${ACCESS_USER}|${exp}`).digest('base64url');
 const cookieOf = (req, name) => (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(([k]) => k === name)?.slice(1).join('=');
@@ -58,7 +59,7 @@ app.use((req, res, next) => {
   let needsStaff = isPage;
   if (!needsStaff && p.startsWith('/api/') && !PUBLIC_API.has(p)) {
     const u = userById(req.get('x-user-id'));
-    const citizenCall = u?.role === 'CITIZEN' && (p === '/api/reports' || /^\/api\/reports\/[\w-]+(\/actions\/rate)?$/.test(p));
+    const citizenCall = u?.role === 'CITIZEN' && (p === '/api/reports' || /^\/api\/reports\/[\w-]+(\/actions\/rate)?$/.test(p) || ['/api/notifications', '/api/notifications/read', '/api/push/subscribe', '/api/push/unsubscribe', '/api/me'].includes(p));
     needsStaff = !citizenCall;
   }
   if (needsStaff) res.set('Cache-Control', 'no-store');
@@ -126,6 +127,155 @@ function actor(req) {
   return u;
 }
 const wrap = fn => (req, res) => { try { const out = fn(req, res); if (out !== undefined) res.json(out); } catch (e) { res.status(e.status || 500).json({ error: e.message }); if (!e.status) console.error(e); } };
+
+// ---------- realtime: private rooms ----------
+// Staff (valid session) join 'staff' automatically; a citizen joins only their own room.
+const toStaff = (event, payload) => io.to('staff').emit(event, payload);
+io.on('connection', socket => {
+  const h = socket.handshake.headers || {};
+  const fakeReq = { headers: h, get: k => h[String(k).toLowerCase()] };
+  if (hasStaffAccess(fakeReq)) socket.join('staff');
+  socket.on('join', ({ userId } = {}) => { const u = userById(userId); if (u?.role === 'CITIZEN') socket.join('user:' + u.id); });
+});
+
+// ---------- Web Push (VAPID keys generated once, kept with the data) ----------
+let vapid = { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY };
+if (!vapid.publicKey || !vapid.privateKey) {
+  const file = path.join(DATA_DIR, 'vapid.json');
+  try { vapid = JSON.parse(fs.readFileSync(file, 'utf8')); } catch {
+    vapid = webpush.generateVAPIDKeys();
+    fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(file, JSON.stringify(vapid));
+  }
+}
+webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'https://balleagh.geo-scale.com', vapid.publicKey, vapid.privateKey);
+async function pushTo(userId, payload) {
+  const subs = db.pushSubs[userId] || [];
+  if (!subs.length) return;
+  const keep = [];
+  await Promise.all(subs.map(async sub => {
+    try { await webpush.sendNotification(sub, JSON.stringify(payload), { TTL: 86400 }); keep.push(sub); }
+    catch (e) { if (![404, 410].includes(e.statusCode)) keep.push(sub); }
+  }));
+  if (keep.length !== subs.length) { db.pushSubs[userId] = keep; save(); }
+}
+const prefsOf = u => ({ reports: true, announcements: true, homeVillage: null, ...(u?.prefs || {}) });
+function deliver(userId, n, { kind = 'reports' } = {}) {
+  const u = userById(userId);
+  if (!u || prefsOf(u)[kind] === false) return null;
+  const row = addNotification(userId, n);
+  io.to('user:' + userId).emit('notification', row);
+  pushTo(userId, { title: n.title, body: n.body, url: n.url || '/citizen.html', tag: n.reportId || n.type }).catch(() => {});
+  return row;
+}
+
+// ---------- citizen notifications from report status changes ----------
+const iso = t => `\u2066${t}\u2069`; // keep Latin report codes readable inside Arabic text
+const NOTIFY = {
+  ROUTED: r => ({ type: 'received', title: 'بلاغك وصل ✅', body: `بلاغك ${iso(r.code)} وصل لـ ${r.unitName}` }),
+  OPS_QUEUE: r => ({ type: 'received', title: 'بلاغك وصل ✅', body: `بلاغك ${iso(r.code)} وصل لغرفة العمليات بالمحافظة` }),
+  MERGED: (r, ev) => ({ type: 'merged', title: 'بلاغك اتضم لبلاغ مشابه 🔁', body: `نفس المشكلة اتبلّغ عنها قبل كده (${iso(ev.masterCode)})، وبلاغك اتضم ليها وده بيرفع أولويتها` }),
+  ACKNOWLEDGED: r => ({ type: 'ack', title: 'الوحدة استلمت بلاغك 👀', body: `${r.unitName} استلمت بلاغك ${iso(r.code)}` }),
+  RESOLVED: r => ({ type: 'resolved', title: 'اتحلت ✅', body: `بلاغك ${iso(r.code)} اتحل — شوف صورة الحل وقيّم` }),
+  CLOSED: r => ({ type: 'closed', title: 'بلاغك اتقفل', body: `بلاغك ${iso(r.code)} اتقفل — شكراً لمشاركتك 🙏` }),
+};
+setNotifier((r, to, ev = {}) => {
+  // a citizen's own screens always refresh, for every status change
+  const recipients = to === 'MERGED' ? [r.citizenId].filter(Boolean) : reportRecipients(r);
+  const ownOf = cid => db.reports.find(x => x.citizenId === cid && (x.id === r.id || x.masterId === r.id)) || r;
+  const ownId = cid => ownOf(cid).id;
+  for (const cid of recipients) io.to('user:' + cid).emit('report:update', { id: ownId(cid), code: ownOf(cid).code, status: r.status });
+  const make = NOTIFY[to];
+  if (!make) return;
+  for (const cid of recipients) {
+    if (to === 'CLOSED' && cid === r.citizenId && r.rating && Date.now() - r.rating.at < 15000) continue; // they just closed it by rating
+    const own = ownOf(cid), id = own.id;
+    const n = make({ ...r, code: own.code }, ev); // each citizen sees the code of the report they filed
+    deliver(cid, { ...n, reportId: id, url: `/citizen.html#report/${id}`, ...(to === 'RESOLVED' ? { action: 'rate' } : {}) });
+  }
+});
+
+// ---------- citizen APIs: notifications, push subscription, preferences ----------
+app.get('/api/notifications', wrap(req => {
+  const u = actor(req);
+  if (u.role !== 'CITIZEN') throw httpError(403, 'للمواطنين فقط');
+  const mine = db.notifications.filter(n => n.userId === u.id).sort((a, b) => b.at - a.at);
+  return { unread: mine.filter(n => !n.read).length, items: mine.slice(0, 60) };
+}));
+app.post('/api/notifications/read', wrap(req => {
+  const u = actor(req);
+  const ids = Array.isArray(req.body?.ids) ? new Set(req.body.ids) : null;
+  let n = 0;
+  for (const x of db.notifications) if (x.userId === u.id && !x.read && (!ids || ids.has(x.id))) { x.read = true; n++; }
+  if (n) save();
+  return { marked: n };
+}));
+app.get('/api/push/key', (_req, res) => res.json({ publicKey: vapid.publicKey }));
+app.post('/api/push/subscribe', wrap(req => {
+  const u = actor(req);
+  const sub = req.body?.subscription;
+  if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) throw httpError(400, 'اشتراك غير صالح');
+  const list = (db.pushSubs[u.id] ||= []).filter(x => x.endpoint !== sub.endpoint);
+  list.push({ endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } });
+  db.pushSubs[u.id] = list.slice(-5); save();
+  return { ok: true, devices: db.pushSubs[u.id].length };
+}));
+app.post('/api/push/unsubscribe', wrap(req => {
+  const u = actor(req);
+  const ep = req.body?.endpoint;
+  db.pushSubs[u.id] = (db.pushSubs[u.id] || []).filter(x => ep && x.endpoint !== ep);
+  save();
+  return { ok: true };
+}));
+app.get('/api/me', wrap(req => { const u = actor(req); return { id: u.id, name: u.name, prefs: prefsOf(u), pushDevices: (db.pushSubs[u.id] || []).length }; }));
+app.patch('/api/me', wrap(req => {
+  const u = actor(req);
+  if (u.role !== 'CITIZEN') throw httpError(403, 'للمواطنين فقط');
+  const b = req.body || {}, p = prefsOf(u);
+  if (b.reports !== undefined) p.reports = !!b.reports;
+  if (b.announcements !== undefined) p.announcements = !!b.announcements;
+  if (b.homeVillage !== undefined) p.homeVillage = buildGeo().villages.features.some(v => v.properties.id === b.homeVillage) ? b.homeVillage : null;
+  u.prefs = p; save();
+  return { prefs: p };
+}));
+
+// ---------- announcements from the governorate (all citizens, or one center / unit / village) ----------
+function announcementRecipients(target) {
+  const geo = buildGeo();
+  const t = target || { type: 'all' };
+  const villages = t.type === 'all' ? null : new Set(geo.villages.features.filter(v =>
+    t.type === 'center' ? t.ids.includes(v.properties.centerId) : t.type === 'unit' ? t.ids.includes(v.properties.unitId) : t.ids.includes(v.properties.id)).map(v => v.properties.id));
+  const since = Date.now() - 180 * 86_400_000;
+  return db.users.filter(u => u.role === 'CITIZEN' && u.active !== false && prefsOf(u).announcements !== false && (!villages
+    || villages.has(prefsOf(u).homeVillage)
+    || db.reports.some(r => r.citizenId === u.id && r.createdAt >= since && villages.has(r.villageId)))).map(u => u.id);
+}
+app.get('/api/announcements', wrap(req => {
+  const u = actor(req);
+  if (!['OPS_SUPERVISOR', 'OPS_REVIEWER', 'GOVERNOR'].includes(u.role)) throw httpError(403, 'غير مصرح');
+  return db.announcements.slice().reverse().slice(0, 50).map(a => ({ ...a, byName: userById(a.by)?.name }));
+}));
+app.post('/api/announcements/preview', wrap(req => {
+  const u = actor(req);
+  if (u.role !== 'OPS_SUPERVISOR') throw httpError(403, 'لمشرف الغرفة فقط');
+  return { recipients: announcementRecipients(req.body?.target).length };
+}));
+app.post('/api/announcements', wrap(req => {
+  const u = actor(req);
+  if (u.role !== 'OPS_SUPERVISOR') throw httpError(403, 'لمشرف الغرفة فقط');
+  const title = String(req.body?.title || '').trim(), body = String(req.body?.body || '').trim();
+  const target = req.body?.target?.type && req.body.target.type !== 'all' ? { type: req.body.target.type, ids: (req.body.target.ids || []).map(String) } : { type: 'all', ids: [] };
+  if (!title || !body) throw httpError(400, 'العنوان والنص مطلوبين');
+  if (title.length > 80 || body.length > 400) throw httpError(400, 'العنوان حد أقصى 80 حرف والنص 400 حرف');
+  if (target.type !== 'all' && !target.ids.length) throw httpError(400, 'اختار المنطقة المستهدفة');
+  const recipients = announcementRecipients(target);
+  const a = { id: crypto.randomUUID(), title, body, target, by: u.id, at: Date.now(), sent: 0 };
+  for (const cid of recipients) if (deliver(cid, { type: 'announce', title: `📢 ${title}`, body, announcementId: a.id, url: '/citizen.html#notifs' }, { kind: 'announcements' })) a.sent++;
+  db.announcements.push(a);
+  audit({ actorId: u.id, actorRole: u.role, entity: 'announcement', entityId: a.id, action: 'announcement_sent', note: `${title} — ${a.sent} مواطن` });
+  save();
+  return a;
+}));
+
 
 // Visibility: what each role can see of a report
 function view(r, u, { full = false } = {}) {
@@ -250,8 +400,8 @@ app.post('/api/reports', upload.array('media', 6), wrap(req => {
     accuracy: b.accuracy ? Number(b.accuracy) : null, locationSource: b.locationSource || 'gps', media,
     source: social ? (b.source || 'social') : (b.source === 'chat' ? 'chat' : 'app'), socialUrl: b.socialUrl, actorId: u.id, actorRole: u.role,
   });
-  if (master) io.emit('report:update', view(master, { role: 'OPS_SUPERVISOR' }));
-  else io.emit('report:new', view(report, { role: 'OPS_SUPERVISOR' }));
+  if (master) toStaff('report:update', view(master, { role: 'OPS_SUPERVISOR' }));
+  else toStaff('report:new', view(report, { role: 'OPS_SUPERVISOR' }));
   return { id: report.id, code: report.code, duplicateOf: master?.code || null, unitName: report.unitName, noUnitArea: report.noUnitArea, status: report.status, priority: report.priority };
 }));
 
@@ -262,7 +412,7 @@ app.post('/api/reports/:id/actions/:action', upload.single('photo'), wrap(req =>
   ['lng', 'lat', 'stars', 'cost'].forEach(k => { if (data[k] !== undefined && data[k] !== '') data[k] = Number(data[k]); });
   if (data.resolved !== undefined) data.resolved = data.resolved === true || data.resolved === 'true';
   const r = act(req.params.id, req.params.action, u, data);
-  io.emit('report:update', view(r, { role: 'OPS_SUPERVISOR' }));
+  toStaff('report:update', view(r, { role: 'OPS_SUPERVISOR' }));
   return view(r, u, { full: true });
 }));
 
@@ -402,7 +552,7 @@ app.patch('/api/units/:id', wrap(req => {
 
 app.get('/api/audit/settings', wrap(req => {
   requireSup(req);
-  return db.audit.filter(a => ['settings', 'content', 'categories', 'user', 'unit'].includes(a.entity)).slice(-100).reverse().map(a => ({ ...a, actorName: userById(a.actorId)?.name }));
+  return db.audit.filter(a => ['settings', 'content', 'categories', 'user', 'unit', 'announcement'].includes(a.entity)).slice(-100).reverse().map(a => ({ ...a, actorName: userById(a.actorId)?.name }));
 }));
 
 // ---------- public (landing page) ----------
@@ -442,7 +592,7 @@ app.get('/api/export/reports', wrap((req, res) => {
 app.post('/api/demo/reset', wrap(() => { const out = seed(); io.emit('demo:reset'); return out; }));
 
 // escalation worker
-setInterval(() => { for (const r of runEscalation()) io.emit('report:update', view(r, { role: 'OPS_SUPERVISOR' })); }, 30_000);
+setInterval(() => { for (const r of runEscalation()) toStaff('report:update', view(r, { role: 'OPS_SUPERVISOR' })); }, 30_000);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`\nبلّغ — Ballegh demo running:\n  http://localhost:${PORT}`);

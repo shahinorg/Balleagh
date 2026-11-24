@@ -23,6 +23,7 @@ const P = {
   check: '<path d="m5 12 5 5 9-10"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5"/>',
   filter: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
   volume: '<path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6"/>',

@@ -51,8 +51,8 @@ export function load() {
   return true;
 }
 // Seed lifecycle: build everything in memory, persist once when complete.
-export function beginSeed(next) { seeding = true; clearTimeout(saveTimer); Object.assign(db, next); }
-export function endSeed() { seeding = false; writeDb(); }
+export function beginSeed(next) { seeding = true; clearTimeout(saveTimer); Object.assign(db, { notifications: [], announcements: [] }, next); } // push devices survive a reset; old notifications point at old reports
+export function endSeed() { seeding = false; ensureDefaults(); writeDb(); }
 export function replaceAll(next) {
   Object.assign(db, next);
   writeDb();
@@ -64,6 +64,9 @@ export function ensureDefaults() {
   db.categories.forEach(c => { if (c.active === undefined) c.active = true; if (!Array.isArray(c.keywords)) c.keywords = DEFAULT_KEYWORDS[c.code] || []; });
   db.content = { ...structuredClone(DEFAULT_CONTENT), ...(db.content || {}) };
   if (!db.unitMeta) db.unitMeta = {};
+  if (!Array.isArray(db.notifications)) db.notifications = [];
+  if (!Array.isArray(db.announcements)) db.announcements = [];
+  if (!db.pushSubs || typeof db.pushSubs !== 'object') db.pushSubs = {};
 }
 export const getCat = code => db.categories.find(c => c.code === code);
 export const unitName = (id, fallback) => db.unitMeta[id]?.name || fallback;
@@ -130,6 +133,27 @@ function setStatus(r, to, ev, at = Date.now()) {
   r.status = to;
   r.updatedAt = at;
   addEvent(r, { ...ev, from, to }, at);
+  if (!seeding && notifier && from !== to) notifier(r, to, ev);
+}
+
+// ---------- citizen notifications ----------
+// Only these status changes notify the citizen (decided with the governorate team):
+// received (routed), acknowledged, resolved (→ rate), closed. Merged duplicates notify separately.
+let notifier = null;
+export function setNotifier(fn) { notifier = fn; }
+// Everyone who reported this problem: the master's citizen and the citizens of every duplicate merged into it
+export function reportRecipients(r) {
+  const ids = new Set();
+  if (r.citizenId) ids.add(r.citizenId);
+  for (const d of db.reports) if (d.masterId === r.id && d.citizenId) ids.add(d.citizenId);
+  return [...ids];
+}
+export function addNotification(userId, n, at = Date.now()) {
+  const row = { id: crypto.randomUUID(), userId, at, read: false, ...n };
+  db.notifications.push(row);
+  if (db.notifications.length > 20000) db.notifications.splice(0, db.notifications.length - 20000);
+  save();
+  return row;
 }
 
 // ---------- create ----------
@@ -179,6 +203,7 @@ export function createReport(input, { at = Date.now(), skipLimit = false } = {})
     master.updatedAt = at;
     db.reports.push(r);
     save();
+    if (!seeding && notifier) notifier(r, 'MERGED', { masterCode: master.code });
     return { report: r, master };
   }
 

@@ -84,7 +84,7 @@ const roNote = '<div class="ro-note hint">أنت بدور «مراجع» — ت�
 const SECTIONS = [
   ['النظام', [['general', 'الإعدادات العامة'], ['categories', 'تصنيفات البلاغات'], ['sla', 'الأولويات ومدد الحل'], ['escalation', 'التصعيد'], ['kpi', 'مؤشرات الأداء']]],
   ['الهيكل والمستخدمون', [['units', 'الوحدات المحلية'], ['users', 'المستخدمون والصلاحيات']]],
-  ['المحتوى', [['content', 'محتوى الموقع العام'], ['schedules', 'التقارير المجدولة']]],
+  ['المحتوى', [['content', 'محتوى الموقع العام'], ['announce', 'إعلانات للمواطنين'], ['schedules', 'التقارير المجدولة']]],
   ['الرقابة', [['log', 'سجل التغييرات']]],
 ];
 document.getElementById('side').innerHTML = SECTIONS.map(([g, items]) => `<h6>${g}</h6>${items.map(([k, t]) => `<a href="#${k}" data-k="${k}">${t}</a>`).join('')}`).join('');
@@ -381,11 +381,80 @@ const views = {
     document.getElementById('save').onclick = () => { read(); saveSettings({ reportSchedules: list }).catch(e => toast(e.message, 'err')); };
   },
 
+  async announce() {
+    geo = geo || await api('/api/geo');
+    const centers = geo.centers.features.map(c => c.properties).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    const units = geo.units.features.map(u => u.properties);
+    const vills = geo.villages.features.map(v => v.properties);
+    const TT = { all: 'كل المواطنين', center: 'مركز / قسم', unit: 'وحدة محلية', village: 'قرية / شياخة' };
+    const groupOpts = (list, key) => centers.map(c => { const items = list.filter(x => x[key] === c.id).sort((a, b) => a.name.localeCompare(b.name, 'ar')); return items.length ? `<optgroup label="${esc(c.name)}">${items.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>` : ''; }).join('');
+    const c = shell('إعلانات للمواطنين', 'إشعار من المحافظة يوصل لتطبيق المواطن (وكإشعار على الموبايل لو مفعّل): انقطاع مياه أو كهرباء، أعمال صيانة، تنبيه طقس. بيوصل للي ساكن في المنطقة أو بلّغ منها خلال آخر 6 شهور، وفعّل «إعلانات المحافظة».', `
+      <div class="grid2" style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start">
+        <div class="card stack" style="padding:16px">
+          <label class="field"><span>العنوان <span class="muted tiny" id="tl">0/80</span></span><input class="input" id="aTitle" maxlength="80" placeholder="مثال: قطع مياه مؤقت في بني صالح"></label>
+          <label class="field"><span>النص <span class="muted tiny" id="bl">0/400</span></span><textarea class="input" id="aBody" maxlength="400" rows="4" placeholder="مثال: هتنقطع المياه يوم الخميس من 9 الصبح لـ 2 الضهر بسبب صيانة الخط الرئيسي. نعتذر عن الإزعاج."></textarea></label>
+          <label class="field"><span>المستهدفين</span><select class="input" id="aType">${Object.entries(TT).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select></label>
+          <label class="field hidden" id="aWhereF"><span id="aWhereL">المنطقة</span><select class="input" id="aWhere" multiple size="8"></select><span class="tiny muted">تقدر تختار أكتر من واحدة بـ Ctrl</span></label>
+          <div class="row wrap"><span class="small" id="reach">—</span><span class="spacer"></span><button class="btn" id="aSend">إرسال الإعلان</button></div>
+        </div>
+        <div class="stack">
+          <div class="small muted">معاينة على الموبايل</div>
+          <div class="card" style="padding:12px;display:grid;grid-template-columns:38px 1fr;gap:10px;background:#FFFBF0;border-color:#F3D99A"><span style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#FFF4DB;font-size:18px">📢</span><span><b id="pvT" style="display:block;font-size:14px">📢 عنوان الإعلان</b><span id="pvB" class="small" style="display:block;margin-top:2px">نص الإعلان هيظهر هنا</span><span class="tiny muted">دلوقتي</span></span></div>
+        </div>
+      </div>
+      <h3 style="margin:20px 0 8px">الإعلانات اللي اتبعتت</h3>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="t" id="aHist"><tr><td class="muted">جاري التحميل…</td></tr></table></div>`, { save: false });
+    const $ = id => c.querySelector('#' + id);
+    const target = () => { const type = $('aType').value; return { type, ids: type === 'all' ? [] : [...$('aWhere').selectedOptions].map(o => o.value) }; };
+    let pt;
+    const preview = () => {
+      $('pvT').textContent = '📢 ' + ($('aTitle').value.trim() || 'عنوان الإعلان');
+      $('pvB').textContent = $('aBody').value.trim() || 'نص الإعلان هيظهر هنا';
+      $('tl').textContent = $('aTitle').value.length + '/80'; $('bl').textContent = $('aBody').value.length + '/400';
+      clearTimeout(pt);
+      pt = setTimeout(async () => {
+        const t = target();
+        if (t.type !== 'all' && !t.ids.length) { $('reach').textContent = 'اختار المنطقة'; return; }
+        try { const { recipients } = await api('/api/announcements/preview', { method: 'POST', body: { target: t } }); $('reach').innerHTML = `هيوصل لـ <b class="num">${fmt(recipients)}</b> مواطن`; }
+        catch (e) { $('reach').textContent = e.message; }
+      }, 250);
+    };
+    $('aType').onchange = () => {
+      const type = $('aType').value;
+      $('aWhereF').classList.toggle('hidden', type === 'all');
+      $('aWhereL').textContent = TT[type];
+      $('aWhere').innerHTML = type === 'center' ? centers.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('') : type === 'unit' ? groupOpts(units, 'centerId') : type === 'village' ? groupOpts(vills, 'centerId') : '';
+      preview();
+    };
+    ['aTitle', 'aBody'].forEach(id => $(id).oninput = preview);
+    $('aWhere').onchange = preview;
+    const loadHist = async () => {
+      const rows = await api('/api/announcements');
+      const where = t => t.type === 'all' ? 'كل المواطنين' : `${TT[t.type]}: ${t.ids.map(id => (t.type === 'center' ? centers : t.type === 'unit' ? units : vills).find(x => x.id === id)?.name || id).join('، ')}`;
+      $('aHist').innerHTML = `<thead><tr><th>الوقت</th><th>الإعلان</th><th>المستهدفين</th><th>وصل لـ</th><th>بواسطة</th></tr></thead><tbody>${rows.map(a => `<tr><td class="num small">${dt(a.at)}</td><td><b>${esc(a.title)}</b><div class="small muted">${esc(a.body)}</div></td><td class="small">${esc(where(a.target))}</td><td class="num">${fmt(a.sent)}</td><td class="small">${esc(a.byName || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">لسه مفيش إعلانات</td></tr>'}</tbody>`;
+    };
+    $('aSend').onclick = async () => {
+      const title = $('aTitle').value.trim(), body = $('aBody').value.trim(), t = target();
+      if (!title || !body) return toast('اكتب العنوان والنص', 'err');
+      if (t.type !== 'all' && !t.ids.length) return toast('اختار المنطقة المستهدفة', 'err');
+      const ok = await modal({ title: 'تأكيد إرسال الإعلان', body: `<p>الإعلان هيتبعت دلوقتي ومش هينفع يترجع فيه.</p><p class="small">${$('reach').innerHTML}</p>`, actions: [{ label: 'إرسال', value: true }, { label: 'إلغاء', cls: 'ghost', value: false }] });
+      if (!ok) return;
+      try {
+        const a = await api('/api/announcements', { method: 'POST', body: { title, body, target: t } });
+        toast(`تم الإرسال لـ ${fmt(a.sent)} مواطن`, 'ok');
+        $('aTitle').value = ''; $('aBody').value = ''; preview(); loadHist();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+    if (userId !== 'ops-sup') c.querySelectorAll('input,textarea,select,#aSend').forEach(x => x.disabled = true);
+    preview();
+    loadHist().catch(e => { $('aHist').innerHTML = `<tr><td class="danger-note">${esc(e.message)}</td></tr>`; });
+  },
+
   async log() {
     shell('سجل التغييرات', 'كل تعديل في الإعدادات والمحتوى والمستخدمين مسجّل في سجل التدقيق غير القابل للتعديل.', '<div class="card" style="padding:0;overflow-x:auto"><table class="t" id="lt"><tr><td class="muted">جاري التحميل…</td></tr></table></div>', { save: false });
     try {
       const rows = await api('/api/audit/settings');
-      const A = { settings_updated: 'تعديل الإعدادات', content_updated: 'تعديل محتوى الموقع', categories_updated: 'تعديل التصنيفات', user_created: 'إضافة مستخدم', user_updated: 'تعديل مستخدم', unit_updated: 'تعديل وحدة', reports_exported: 'تصدير بلاغات' };
+      const A = { settings_updated: 'تعديل الإعدادات', content_updated: 'تعديل محتوى الموقع', categories_updated: 'تعديل التصنيفات', user_created: 'إضافة مستخدم', user_updated: 'تعديل مستخدم', unit_updated: 'تعديل وحدة', reports_exported: 'تصدير بلاغات', announcement_sent: 'إرسال إعلان للمواطنين' };
       document.getElementById('lt').innerHTML = `<thead><tr><th>#</th><th>الوقت</th><th>بواسطة</th><th>الإجراء</th><th>التفاصيل</th><th>البصمة</th></tr></thead><tbody>${rows.map(a => `<tr><td class="num">${a.id}</td><td class="num small">${dt(a.at)}</td><td>${esc(a.actorName || '')}</td><td>${A[a.action] || a.action}</td><td class="small">${esc(a.note || '')}</td><td class="num tiny muted" dir="ltr" style="font-family:monospace">${a.hash.slice(0, 12)}…</td></tr>`).join('') || '<tr><td colspan="6" class="muted">لسه مفيش تغييرات</td></tr>'}</tbody>`;
     } catch (e) { document.getElementById('lt').innerHTML = `<tr><td class="danger-note">${esc(e.message)}</td></tr>`; }
   },

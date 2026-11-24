@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#187535">
 <title>بلّغ — تطبيق المواطن</title>
 <link rel="icon" href="/brand/ballegh-mark.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/img/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -105,6 +107,31 @@
   .sheet { position:absolute; inset:0; background:rgb(14 21 17/.45); z-index:50; display:flex; align-items:flex-end; }
   .sheet .sh { background:#fff; width:100%; border-radius:20px 20px 0 0; padding:14px; display:grid; gap:10px; animation:mpop .2s ease-out; }
   #smap { height:320px; border-radius:14px; overflow:hidden; }
+  .bellb { position:relative; }
+  .nbadge { position:absolute; top:-5px; inset-inline-start:-5px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#D92D20; color:#fff; font-size:11px; font-weight:700; display:grid; place-items:center; line-height:1; border:2px solid var(--green-500); }
+  .nbadge:empty { display:none; }
+  .nlist { display:grid; gap:8px; }
+  .nitem { display:grid; grid-template-columns:38px 1fr; gap:10px; align-items:start; background:#fff; border:1px solid var(--border); border-radius:14px; padding:10px 12px; text-decoration:none; color:var(--text) !important; font-weight:400; }
+  .nitem.unread { background:#F1F8F3; border-color:#BFE0C8; }
+  .nitem .ni { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-size:18px; background:var(--surface-2); }
+  .nitem.announce .ni { background:#FFF4DB; }
+  .nitem b { display:block; font-size:14px; }
+  .nitem .nb { font-size:13px; color:var(--text-2, #3d4a42); margin-top:2px; }
+  .nitem .nt { font-size:11px; color:var(--muted); margin-top:4px; }
+  .nitem.unread b::after { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--green-500); margin-inline-start:6px; vertical-align:middle; }
+  .pushcard { display:flex; gap:10px; align-items:center; background:#FFF8E6; border:1px solid #F3D99A; border-radius:14px; padding:10px 12px; margin:10px 16px 0; }
+  .pushcard .spacer { flex:1; }
+  .pref { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .pref:last-child { border-bottom:0; }
+  .pref > div { flex:1; }
+  .pref .small { margin-top:2px; }
+  .switch { position:relative; width:46px; height:26px; flex:none; }
+  .switch input { opacity:0; width:0; height:0; position:absolute; }
+  .switch i { position:absolute; inset:0; background:#CBD5D0; border-radius:999px; transition:background .15s; }
+  .switch i::after { content:''; position:absolute; top:3px; inset-inline-start:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 3px rgb(0 0 0/.25); }
+  .switch input:checked + i { background:var(--green-500); }
+  .switch input:checked + i::after { transform:translateX(-20px); }
+  .switch input:focus-visible + i { outline:2px solid var(--green-700); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -128,7 +155,7 @@ function appbar(title, back) { return `<div class="appbar">${back ? `<button cla
 $app.addEventListener('click', e => { if (e.target.closest('[data-back]')) history.back(); });
 
 // --- simple hash router ---
-const routes = { '': home, login, new: step1, media: step2, location: step3, done: doneScreen, report: reportScreen, chat: chatScreen };
+const routes = { '': home, login, new: step1, media: step2, location: step3, done: doneScreen, report: reportScreen, chat: chatScreen, notifs: notifsScreen, settings: settingsScreen };
 window.addEventListener('hashchange', route);
 function go(h) { location.hash = h; }
 function route() {
@@ -174,8 +201,9 @@ function login() {
 // ---------- home ----------
 async function home() {
   useUser(user.id);
-  render(`<div class="hero"><div class="row"><img src="/brand/ballegh-mark.svg" width="30" style="filter:brightness(0) invert(1)" alt=""><b style="font-size:20px">بلّغ</b><span class="spacer"></span><button class="icon-btn" id="logout" style="background:transparent;border-color:rgb(255 255 255/.3);color:#fff" aria-label="خروج">${icon('logout', 18)}</button></div>
+  render(`<div class="hero"><div class="row"><img src="/brand/ballegh-mark.svg" width="30" style="filter:brightness(0) invert(1)" alt=""><b style="font-size:20px">بلّغ</b><span class="spacer"></span><button class="icon-btn bellb" id="bell" style="background:transparent;border-color:rgb(255 255 255/.3);color:#fff" aria-label="الإشعارات">${icon('bell', 18)}<span class="nbadge" id="nbadge"></span></button><button class="icon-btn" id="logout" style="background:transparent;border-color:rgb(255 255 255/.3);color:#fff" aria-label="خروج">${icon('logout', 18)}</button></div>
       <h2>أهلاً ${esc(user.name || '')}</h2><p>صوّر المشكلة، والوحدة المحلية المختصة هتستلمها فوراً.</p></div>
+    <div id="pushSlot"></div>
     <button class="bigcta" id="new"><span class="ic">${icon('plus', 28)}</span><span><b>بلاغ جديد</b><span class="muted small">3 خطوات بس: النوع، الصور، الموقع</span></span></button>
     <button class="bigcta chatcta" id="chatGo"><span class="ic">${icon('chat', 26)}</span><span><b>بلّغ بالمحادثة</b><span class="muted small">اكتب أو اتكلم، والمساعد يكمّل معاك</span></span></button>
     <button class="emerg" id="emerg">${icon('alert', 20)} بلاغ طوارئ (حريق / انهيار)</button>
@@ -184,6 +212,8 @@ async function home() {
   document.getElementById('chatGo').onclick = () => go('chat');
   document.getElementById('emerg').onclick = () => { resetDraft(); draft.category = 'emergency'; emergencySheet(); };
   document.getElementById('logout').onclick = () => { setUser(null, 'citizen'); user = null; go('login'); };
+  document.getElementById('bell').onclick = () => go('notifs');
+  joinRoom(); refreshBadge(); pushPrompt();
   const queued = getQueue();
   try {
     const list = await api('/api/reports');
@@ -777,7 +807,7 @@ async function chatEnd() {
 }
 function chatNotify(r) {
   if (!chat?.alive || !chat.myIds.has(r.id)) return;
-  const msg = { ACKNOWLEDGED: 'الوحدة المحلية استلمت بلاغك 👀', IN_PROGRESS: 'الوحدة بدأت الشغل على بلاغك 🛠', RESOLVED: 'الوحدة بتقول إن المشكلة اتحلت ✅ قيّم الحل', REJECTED: 'الوحدة رفضت البلاغ، وغرفة العمليات هتراجع الرفض', CLOSED: 'البلاغ اتقفل' }[r.status];
+  const msg = { ACKNOWLEDGED: 'الوحدة المحلية استلمت بلاغك 👀', RESOLVED: 'الوحدة بتقول إن المشكلة اتحلت ✅ قيّم الحل', CLOSED: 'البلاغ اتقفل' }[r.status];
   if (!msg) return;
   bot(`📣 <b class="num" dir="ltr">${esc(r.code)}</b><br>${msg}${r.status === 'RESOLVED' ? `<br><a href="#report/${r.id}">افتح البلاغ وقيّم ←</a>` : ''}`, 300).catch(() => {});
 }
@@ -809,9 +839,105 @@ async function runChat(again = false) {
   }
 }
 
+// ---------- notifications ----------
+const N_ICON = { received: '📨', merged: '🔁', ack: '👀', resolved: '✅', closed: '🙏', announce: '📢' };
+let unread = 0;
+function setBadge(n) { unread = Math.max(0, n); const b = document.getElementById('nbadge'); if (b) b.textContent = unread ? (unread > 9 ? '9+' : unread) : ''; }
+async function refreshBadge() { try { setBadge((await api('/api/notifications')).unread); } catch {} }
+
+async function notifsScreen() {
+  render(`${appbar('الإشعارات', true)}<div class="pad stack">
+    <div class="row"><span class="muted small" id="ncount"></span><span class="spacer"></span><a href="#settings" class="small">${icon('settings', 14)} إعدادات الإشعارات</a></div>
+    <div class="nlist" id="nlist"><div class="muted small">جاري التحميل…</div></div></div>`);
+  try {
+    const { items, unread: u } = await api('/api/notifications');
+    document.getElementById('ncount').textContent = u ? `${u} جديد` : 'كله مقروء';
+    document.getElementById('nlist').innerHTML = items.length ? items.map(n => `<a class="nitem ${n.read ? '' : 'unread'} ${n.type === 'announce' ? 'announce' : ''}" href="${n.type === 'announce' ? '#notifs' : esc((n.url || '').replace(/^\/citizen\.html/, '') || '#')}">
+        <span class="ni">${N_ICON[n.type] || '🔔'}</span><span><b>${esc(n.title)}</b><div class="nb">${esc(n.body)}</div><div class="nt">${ago(n.at)}${n.action === 'rate' ? ' · <b style="color:var(--gold-700);display:inline">قيّم الحل</b>' : ''}</div></span></a>`).join('')
+      : `<div class="card muted small" style="text-align:center;padding:24px">${icon('bell', 28)}<div style="margin-top:8px">مفيش إشعارات لسه. أول ما يحصل جديد في بلاغاتك هيوصلك هنا.</div></div>`;
+    if (u) { await api('/api/notifications/read', { method: 'POST', body: {} }); setBadge(0); }
+  } catch (e) { document.getElementById('nlist').innerHTML = `<div class="danger-note">${esc(e.message)}</div>`; }
+}
+
+// ---- Web Push: service worker + subscription (no external service; VAPID keys live on our server) ----
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext;
+let swReg = null;
+async function getReg() { if (!swReg) swReg = await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready; return swReg; }
+const b64ToBytes = b64 => { const p = '='.repeat((4 - b64.length % 4) % 4); const raw = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(raw, c => c.charCodeAt(0)); };
+async function pushState() {
+  if (!pushSupported()) return 'unsupported';
+  if (Notification.permission === 'denied') return 'denied';
+  try { const reg = await getReg(); return (await reg.pushManager.getSubscription()) ? 'on' : 'off'; } catch { return 'off'; }
+}
+async function enablePush() {
+  if (!pushSupported()) { toast('المتصفح ده مش بيدعم الإشعارات. على آيفون: ضيف «بلّغ» للشاشة الرئيسية الأول', 'err'); return false; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('الإشعارات مش مسموحة — تقدر تفعّلها من إعدادات المتصفح', 'err'); return false; }
+  const reg = await getReg();
+  const { publicKey } = await api('/api/push/key');
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) });
+  await api('/api/push/subscribe', { method: 'POST', body: { subscription: sub.toJSON() } });
+  toast('تم تفعيل الإشعارات على الجهاز ده ✓', 'ok');
+  return true;
+}
+async function disablePush() {
+  try { const reg = await getReg(); const sub = await reg.pushManager.getSubscription(); if (sub) { await api('/api/push/unsubscribe', { method: 'POST', body: { endpoint: sub.endpoint } }); await sub.unsubscribe(); } } catch {}
+  toast('تم إيقاف الإشعارات على الجهاز ده');
+}
+async function pushPrompt() {
+  const slot = document.getElementById('pushSlot');
+  if (!slot || (await pushState()) !== 'off') return;
+  try { if (localStorage.getItem('ballegh:pushLater') > Date.now()) return; } catch {}
+  if (!document.getElementById('pushSlot')) return;
+  slot.innerHTML = `<div class="pushcard">${icon('bell', 20)}<div class="small"><b>فعّل الإشعارات</b><div class="muted">علشان يوصلك جديد بلاغاتك حتى والتطبيق مقفول</div></div><span class="spacer"></span><button class="btn sm" id="pOn">تفعيل</button><button class="btn ghost sm" id="pLater" aria-label="بعدين">✕</button></div>`;
+  slot.querySelector('#pOn').onclick = async () => { if (await enablePush().catch(e => toast(e.message, 'err'))) slot.innerHTML = ''; };
+  slot.querySelector('#pLater').onclick = () => { try { localStorage.setItem('ballegh:pushLater', Date.now() + 3 * 86_400_000); } catch {} slot.innerHTML = ''; };
+}
+
+async function settingsScreen() {
+  render(`${appbar('إعدادات الإشعارات', true)}<div class="pad stack"><div class="muted small">جاري التحميل…</div></div>`);
+  const [mine, geo, ps] = await Promise.all([api('/api/me'), api('/api/geo'), pushState()]);
+  const p = mine.prefs;
+  const centers = geo.centers.features.map(c => c.properties).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  const vills = geo.villages.features.map(v => v.properties);
+  const pushTxt = { on: 'مفعّلة على الجهاز ده', off: 'مش مفعّلة على الجهاز ده', denied: 'محظورة من إعدادات المتصفح', unsupported: 'المتصفح ده مش بيدعمها' }[ps];
+  const box = $app.querySelector('.pad');
+  box.innerHTML = `
+    <div class="card" style="padding:4px 14px">
+      <label class="pref"><div><b>تحديثات بلاغاتي</b><div class="small muted">وصول البلاغ، استلام الوحدة، الحل، القفل، والضم لبلاغ مشابه</div></div><span class="switch"><input type="checkbox" id="pRep" ${p.reports ? 'checked' : ''}><i></i></span></label>
+      <label class="pref"><div><b>إعلانات المحافظة</b><div class="small muted">انقطاع مياه أو كهرباء، أعمال صيانة، تنبيهات طقس في منطقتك</div></div><span class="switch"><input type="checkbox" id="pAnn" ${p.announcements ? 'checked' : ''}><i></i></span></label>
+    </div>
+    <label class="field"><span>منطقتي (علشان الإعلانات اللي تخصها توصلك)</span>
+      <select class="input" id="pVil"><option value="">— مش محددة —</option>${centers.map(c => `<optgroup label="${esc(c.name)}">${vills.filter(v => v.centerId === c.id).sort((a, b) => a.name.localeCompare(b.name, 'ar')).map(v => `<option value="${v.id}" ${p.homeVillage === v.id ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+    <div class="card" style="padding:12px 14px"><div class="row"><div style="flex:1"><b>إشعارات الجهاز</b><div class="small muted">${pushTxt}</div></div>
+      ${ps === 'on' ? '<button class="btn ghost sm" id="pOff">إيقاف</button>' : ps === 'off' ? '<button class="btn sm" id="pOn">تفعيل</button>' : ''}</div>
+      <div class="tiny muted" style="margin-top:6px">حتى لو قفلتها، الإشعارات بتفضل موجودة جوه التطبيق تحت 🔔</div></div>
+    <div class="hint small">بنبعتلك عن بلاغاتك إنت بس، ومحدش غيرك بيشوفها.</div>`;
+  const patch = async body => { try { await api('/api/me', { method: 'PATCH', body }); toast('اتحفظ ✓', 'ok'); } catch (e) { toast(e.message, 'err'); } };
+  box.querySelector('#pRep').onchange = e => patch({ reports: e.target.checked });
+  box.querySelector('#pAnn').onchange = e => patch({ announcements: e.target.checked });
+  box.querySelector('#pVil').onchange = e => patch({ homeVillage: e.target.value || null });
+  box.querySelector('#pOn')?.addEventListener('click', async () => { if (await enablePush().catch(e => toast(e.message, 'err'))) settingsScreen(); });
+  box.querySelector('#pOff')?.addEventListener('click', async () => { await disablePush(); settingsScreen(); });
+}
+
 // live updates for my reports
 const sock = document.createElement('script'); sock.src = '/socket.io/socket.io.js';
-sock.onload = () => { const s = io(); s.on('report:update', r => { const [n, a] = location.hash.slice(1).split('/'); if (n === 'chat') chatNotify(r); else if (n === 'report') reportScreen(a); else if (!n) home(); }); };
+let socket = null;
+function joinRoom() { if (socket && user) socket.emit('join', { userId: user.id }); }
+sock.onload = () => {
+  socket = io();
+  socket.on('connect', joinRoom);
+  socket.on('report:update', r => { const [n, a] = location.hash.slice(1).split('/'); if (n === 'chat') chatNotify(r); else if (n === 'report') reportScreen(a); else if (!n) home(); });
+  socket.on('notification', n => {
+    if (!user || n.userId !== user.id) return;
+    const here = location.hash.slice(1).split('/')[0];
+    if (here === 'notifs') return notifsScreen();
+    setBadge(unread + 1);
+    if (here !== 'chat' || n.type === 'announce') toast(`${N_ICON[n.type] || '🔔'} ${n.title}`, 'ok');
+  });
+};
 document.head.appendChild(sock);
 
 M = await meta();
