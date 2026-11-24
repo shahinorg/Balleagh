@@ -115,15 +115,15 @@
 
   /* 7. before / after */
   .ba { display:grid; grid-template-columns:1fr 70px 1fr; gap:0; width:100%; align-items:stretch; }
-  .ba .col { display:grid; gap:14px; }
+  .ba .col { display:grid; gap:10px; }
   .ba .hd { font-size:24px; font-weight:700; padding:14px 22px; border-radius:16px; display:flex; align-items:center; gap:12px; }
   .ba .before .hd { background:var(--red0); color:#991B1B; }
   .ba .after .hd { background:var(--g0); color:var(--g7); }
-  .ba .row { background:#fff; border:1px solid var(--line); border-radius:16px; padding:15px 22px; font-size:19px; line-height:1.5; min-height:70px; display:flex; align-items:center; }
+  .ba .row { background:#fff; border:1px solid var(--line); border-radius:16px; padding:10px 22px; font-size:19px; line-height:1.45; min-height:60px; display:flex; align-items:center; }
   .ba .before .row { color:#7F1D1D; border-color:#F6D5D5; }
   .ba .after .row { border-color:var(--g1); font-weight:500; }
-  .ba .mid { display:grid; gap:14px; grid-template-rows:60px; }
-  .ba .mid div { display:grid; place-items:center; color:var(--gold6); font-size:30px; min-height:70px; }
+  .ba .mid { display:grid; gap:10px; grid-template-rows:60px; }
+  .ba .mid div { display:grid; place-items:center; color:var(--gold6); font-size:30px; min-height:60px; }
 
   /* 8. KPIs */
   .kpiwrap { display:grid; grid-template-columns:420px 1fr; gap:46px; width:100%; align-items:center; }
@@ -230,6 +230,51 @@
   .scr .who { display:inline-block; margin-top:8px; font-size:14px; font-weight:600; color:var(--g7); background:var(--g0); padding:3px 10px; border-radius:999px; }
   .demo-link { display:flex; align-items:center; gap:18px; background:linear-gradient(135deg,var(--g6),var(--g8)); color:#fff; border-radius:22px; padding:16px 26px; font-size:21px; }
   .demo-link b { direction:ltr; color:var(--gold); font-size:24px; }
+
+  /* reporting channels */
+  .ways { display:grid; grid-template-columns:1fr 1.25fr; gap:28px; width:100%; }
+  .way { background:#fff; border:1px solid var(--line); border-radius:24px; padding:22px 26px; display:flex; flex-direction:column; gap:12px; }
+  .way.chat { border:2px solid var(--gold); background:linear-gradient(180deg,#fff, var(--gold0)); }
+  .way .hd { display:flex; align-items:center; gap:16px; }
+  .way h3 { margin:0; font-size:28px; }
+  .way .sub { font-size:17px; color:var(--muted); }
+  .ministeps { display:grid; gap:12px; }
+  .ministeps div { display:flex; align-items:center; gap:14px; background:var(--g0); border-radius:16px; padding:14px 18px; font-size:20px; font-weight:500; color:var(--g8); }
+  .ministeps i { font-style:normal; width:36px; height:36px; border-radius:50%; background:var(--g6); color:#fff; display:grid; place-items:center; font-weight:700; flex:none; }
+  .chatrow { display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start; }
+  .chatmock { background:#EDF3EE; border-radius:22px; padding:16px; display:flex; flex-direction:column; gap:10px; font-size:17px; line-height:1.5; }
+  .chatmock .b { align-self:flex-start; background:#fff; border-radius:16px 16px 16px 4px; padding:10px 14px; max-width:92%; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .chatmock .m { align-self:flex-end; background:var(--g6); color:#fff; border-radius:16px 16px 4px 16px; padding:10px 14px; max-width:92%; }
+  .chatmock .q { display:flex; gap:8px; flex-wrap:wrap; }
+  .chatmock .q span { border:1.5px solid var(--g5); color:var(--g7); background:#fff; border-radius:999px; padding:5px 14px; font-weight:600; font-size:15px; }
+  .chatmock .q span.on { background:var(--g6); color:#fff; border-color:var(--g6); }
+  .feats { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+  .feats li { display:flex; gap:12px; font-size:18px; line-height:1.5; color:var(--ink); }
+  .feats li::before { content:'✓'; flex:none; width:28px; height:28px; border-radius:50%; background:var(--g6); color:#fff; display:grid; place-items:center; font-size:15px; font-weight:700; }
+  .slide.play .chatmock > * { animation:p-rise .5s cubic-bezier(.22,1,.36,1) both; animation-delay:calc(var(--c,0) * 380ms + 700ms); }
+
+  /* notifications */
+  .ntfwrap { display:grid; grid-template-columns:1fr 1fr; gap:30px; width:100%; }
+  .ntfs { display:grid; gap:12px; align-content:start; position:relative; }
+  .ntf { display:grid; grid-template-columns:52px 1fr auto; gap:14px; align-items:center; background:#fff; border:1px solid var(--line); border-radius:18px; padding:13px 18px; box-shadow:0 2px 6px rgba(9,53,23,.05); }
+  .ntf .e { width:52px; height:52px; border-radius:15px; background:var(--g0); display:grid; place-items:center; font-size:24px; }
+  .ntf b { display:block; font-size:20px; }
+  .ntf span { font-size:16px; color:var(--muted); }
+  .ntf em { font-style:normal; font-size:14px; font-weight:600; color:var(--g7); background:var(--g0); padding:4px 10px; border-radius:999px; white-space:nowrap; }
+  .ntf.rate { border-color:var(--gold); background:var(--gold0); } .ntf.rate .e { background:#fff; } .ntf.rate em { background:var(--gold); color:#3B2600; }
+  .acards { display:grid; gap:18px; align-content:start; }
+  .acard { background:#fff; border:1px solid var(--line); border-radius:22px; padding:22px 24px; display:flex; flex-direction:column; gap:12px; }
+  .acard .hd { display:flex; align-items:center; gap:16px; }
+  .acard h3 { margin:0; font-size:25px; }
+  .acard p { margin:0; font-size:18px; color:var(--muted); line-height:1.6; }
+  .tgts { display:flex; gap:8px; flex-wrap:wrap; }
+  .tgts span { font-size:16px; font-weight:600; padding:6px 14px; border-radius:999px; background:var(--g0); color:var(--g7); }
+  .tgts span.on { background:var(--gold); color:#3B2600; }
+  .ann { display:grid; grid-template-columns:44px 1fr; gap:12px; background:var(--gold0); border:1px solid #F3D99A; border-radius:16px; padding:12px 16px; }
+  .ann .e { width:44px; height:44px; border-radius:12px; background:#fff; display:grid; place-items:center; font-size:20px; }
+  .ann b { display:block; font-size:18px; } .ann span { font-size:15px; color:var(--muted); line-height:1.5; }
+  .acard.dark { background:linear-gradient(135deg,var(--g6),var(--g8)); color:#fff; border:0; }
+  .acard.dark p { color:rgba(255,255,255,.85); } .acard.dark b { color:var(--gold); }
 
   /* ---------- motion: every slide plays its entrance when it comes on screen ---------- */
   @property --sw { syntax:'<angle>'; inherits:false; initial-value:360deg; }
@@ -364,11 +409,11 @@
   <h2>ستة أدوار… وكل دور يرى ما يخصه فقط</h2>
   <div class="body">
     <div class="roles">
-      <div class="role"><div class="top"><div class="ic" data-icon="camera"></div><div><h3>المواطن</h3><div class="tool">تطبيق موبايل</div></div></div><p>تسجيل برقم الموبايل (OTP)، تقديم البلاغ في 3 خطوات، متابعة الحالة، وتقييم الحل. يعمل بدون إنترنت.</p></div>
+      <div class="role"><div class="top"><div class="ic" data-icon="camera"></div><div><h3>المواطن</h3><div class="tool">تطبيق موبايل</div></div></div><p>تسجيل برقم الموبايل (OTP)، البلاغ في 3 خطوات أو بالمحادثة، إشعار بكل جديد، وتقييم الحل. يعمل بدون إنترنت.</p></div>
       <div class="role"><div class="top"><div class="ic" data-icon="doc"></div><div><h3>رئيس الوحدة المحلية</h3><div class="tool">موبايل + ويب</div></div></div><p>بلاغات نطاق وحدته فقط، يُسندها لموظفيه، ويرفع تقرير الحل بالصورة. يرى ترتيب وحدته فقط.</p></div>
       <div class="role"><div class="top"><div class="ic" data-icon="filter"></div><div><h3>موظف الوحدة</h3><div class="tool">موبايل</div></div></div><p>البلاغات المسندة له، والعمل الميداني والتصوير بعد الحل. أداؤه يُحسب له وللوحدة.</p></div>
       <div class="role"><div class="top"><div class="ic" data-icon="pin"></div><div><h3>رئيس المركز / المدينة</h3><div class="tool">ويب</div></div></div><p>يتابع وحدات مركزه، ويستلم التصعيد عند تأخر الوحدات في الحل.</p></div>
-      <div class="role"><div class="top"><div class="ic gold" data-icon="layers"></div><div><h3>غرفة العمليات</h3><div class="tool">لوحة ويب — مشرف ومراجع</div></div></div><p>خريطة لحظية، مراجعة الحلول وعينات الرفض، إدخال بلاغات السوشيال، والإعدادات الكاملة للنظام.</p></div>
+      <div class="role"><div class="top"><div class="ic gold" data-icon="layers"></div><div><h3>غرفة العمليات</h3><div class="tool">لوحة ويب — مشرف ومراجع</div></div></div><p>خريطة لحظية، مراجعة الحلول وعينات الرفض، بلاغات السوشيال، إعلانات للمواطنين، والإعدادات الكاملة.</p></div>
       <div class="role"><div class="top"><div class="ic gold" data-icon="bell"></div><div><h3>المحافظ</h3><div class="tool">لوحة موبايل + ويب</div></div></div><p>المؤشرات والإنذارات، ترتيب الوحدات ورؤسائها، وتقارير PDF رسمية بضغطة زر.</p></div>
     </div>
   </div>
@@ -397,6 +442,69 @@
   <div class="foot"><span class="brand"><img src="/brand/ballegh-mark.svg" alt="">بلّغ</span><span class="pg"></span></div>
 </section>
 
+<!-- 6b. CHANNELS -->
+<section class="slide">
+  <span class="kicker">طريقتان للتبليغ</span>
+  <h2>كل مواطن يبلّغ بالطريقة اللي تناسبه</h2>
+  <div class="body">
+    <div class="ways">
+      <div class="way"><div class="hd"><div class="ic" data-icon="camera"></div><div><h3>بالتطبيق</h3><div class="sub">لمن يعرف ما يريد — أسرع طريقة</div></div></div>
+        <div class="ministeps"><div><i>1</i>يختار نوع المشكلة من أيقونات كبيرة</div><div><i>2</i>يصوّر — صورة أو فيديو أو وصف صوتي</div><div><i>3</i>يؤكد الموقع على الخريطة</div></div>
+        <ul class="feats" style="margin-top:auto"><li>يعمل بدون إنترنت، ويُرسل تلقائياً لما النت يرجع</li><li>علامة مائية بالتاريخ والإحداثيات على كل صورة</li></ul>
+      </div>
+      <div class="way chat"><div class="hd"><div class="ic gold" data-icon="chat"></div><div><h3>بالمحادثة <span class="tag" style="background:var(--gold);color:#3B2600;vertical-align:middle">جديد</span></h3><div class="sub">لكبار السن ومن لا يحب الاستمارات</div></div></div>
+        <div class="chatrow">
+          <div class="chatmock">
+            <div class="b" style="--c:0">أهلاً 👋 قولّي إيه المشكلة؟</div>
+            <div class="m" style="--c:1">🎤 الماسورة مكسورة قدام المدرسة والمية مغرّقة الشارع</div>
+            <div class="b" style="--c:2">فهمت إنها <b>مياه الشرب</b> 💧 صح كده؟</div>
+            <div class="q" style="--c:3"><span class="on">أيوه</span><span>لأ، حاجة تانية</span></div>
+            <div class="b" style="--c:4">تمام 📍 فين مكان المشكلة؟</div>
+          </div>
+          <ul class="feats">
+            <li>يكتب أو يتكلم، والكلام يتحول لنص تلقائياً</li>
+            <li>يفهم نوع المشكلة من كلامه، والمواطن يأكده</li>
+            <li>ينبّهه لو نفس المشكلة اتبلّغ عنها قبل كده</li>
+            <li>ملخص قبل الإرسال، وتحديثات البلاغ توصل في نفس المحادثة</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="oneline" style="margin-top:22px"><div class="ic white" data-icon="volume"></div><div>نفس البلاغ ونفس القواعد في الطريقتين — والمحادثة تعمل <b>بدون ذكاء اصطناعي وبدون أي خدمة مدفوعة</b>، وكلماتها المفتاحية تُعدّل من الإعدادات.</div></div>
+  <div class="foot"><span class="brand"><img src="/brand/ballegh-mark.svg" alt="">بلّغ</span><span class="pg"></span></div>
+</section>
+
+<!-- 6c. NOTIFICATIONS -->
+<section class="slide">
+  <span class="kicker">إشعارات المواطن</span>
+  <h2>المواطن يعرف مصير بلاغه… من غير ما يسأل</h2>
+  <div class="body">
+    <div class="ntfwrap">
+      <div class="ntfs">
+        <div class="ntf"><div class="e">📨</div><div><b>بلاغك وصل</b><span>للوحدة المحلية المختصة، برقم تتبع</span></div><em>فوراً</em></div>
+        <div class="ntf"><div class="e">🔁</div><div><b>اتضم لبلاغ مشابه</b><span>نفس المشكلة اتبلّغت قبل كده — وده يرفع أولويتها</span></div><em>تلقائي</em></div>
+        <div class="ntf"><div class="e">👀</div><div><b>الوحدة استلمت بلاغك</b><span>داخل مدة الاستلام المحددة</span></div><em>الوحدة</em></div>
+        <div class="ntf rate"><div class="e">✅</div><div><b>اتحلت — شوف صورة الحل وقيّم</b><span>«متحلتش» = إعادة فتح وتصعيد</span></div><em>قيّم</em></div>
+        <div class="ntf"><div class="e">🙏</div><div><b>بلاغك اتقفل</b><span>شكراً لمشاركتك</span></div><em>نهاية</em></div>
+        <div class="src" style="margin-top:4px">🔔 جرس بعدّاد داخل التطبيق + إشعار على الموبايل حتى والتطبيق مقفول. المواطن يتحكم فيها من الإعدادات.</div>
+      </div>
+      <div class="acards">
+        <div class="acard"><div class="hd"><div class="ic gold" data-icon="volume"></div><div><h3>إعلانات المحافظة</h3></div></div>
+          <p>رسالة من غرفة العمليات لسكان منطقة محددة: قطع مياه أو كهرباء، أعمال صيانة، تنبيه طقس.</p>
+          <div class="tgts"><span>كل المحافظة</span><span>مركز</span><span class="on">وحدة محلية</span><span>قرية</span></div>
+          <div class="ann"><div class="e">📢</div><div><b>قطع مياه مؤقت في السيليين</b><span>يوم الخميس من 9 ص لـ 2 م بسبب صيانة الخط الرئيسي.</span></div></div>
+          <p style="font-size:16px">معاينة وعدد المستلمين قبل الإرسال، وكل إعلان مسجّل في سجل التدقيق.</p>
+        </div>
+        <div class="acard dark"><div class="hd"><div class="ic white" data-icon="check"></div><div><h3>خصوصية بدون تكلفة</h3></div></div>
+          <p>كل مواطن يستقبل تحديثات <b>بلاغاته هو بس</b>، وتفاصيل البلاغات للموظفين فقط. والإشعارات تُرسل من خادم المحافظة <b>بدون أي خدمة خارجية أو رسوم</b>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><img src="/brand/ballegh-mark.svg" alt="">بلّغ</span><span class="pg"></span></div>
+</section>
+
 <!-- 7. WHAT IT SOLVES -->
 <section class="slide">
   <span class="kicker">ماذا تحل المنصة؟</span>
@@ -409,15 +517,17 @@
         <div class="row">«تم الحل» بدون أي دليل</div>
         <div class="row">لا نعرف من تأخر ولا كم تأخر</div>
         <div class="row">إحالة للتحقيق بدون سجل موثّق</div>
-        <div class="row">المحافظ يعرف المشكلة من الإعلام</div></div>
-      <div class="mid"><div></div><div>←</div><div>←</div><div>←</div><div>←</div><div>←</div><div>←</div></div>
+        <div class="row">المحافظ يعرف المشكلة من الإعلام</div>
+        <div class="row">المواطن لا يعرف ماذا حدث لشكواه</div></div>
+      <div class="mid"><div></div><div>←</div><div>←</div><div>←</div><div>←</div><div>←</div><div>←</div><div>←</div></div>
       <div class="col after"><div class="hd">✓ مع «بلّغ»</div>
         <div class="row">بلاغ رسمي برقم تتبع، وصاحبه معروف من أول ثانية</div>
         <div class="row">توجيه تلقائي من الخريطة الرسمية — 176 قرية وشياخة</div>
         <div class="row">صورة الحل لازم تكون من نفس الموقع (≤ 100 م)</div>
         <div class="row">مدة حل لكل بلاغ، وتصعيد تلقائي عند التأخير</div>
         <div class="row">سجل تدقيق مختوم لا يمكن تعديله — يصلح مستنداً رسمياً</div>
-        <div class="row">خريطة لحظية وإنذار للمحافظ قبل أن تتحول لأزمة</div></div>
+        <div class="row">خريطة لحظية وإنذار للمحافظ قبل أن تتحول لأزمة</div>
+        <div class="row">إشعار للمواطن في كل خطوة: وصل، استُلم، اتحل</div></div>
     </div>
   </div>
   <div class="foot"><span class="brand"><img src="/brand/ballegh-mark.svg" alt="">بلّغ</span><span class="pg"></span></div>
@@ -437,7 +547,7 @@
       <div class="lnum"><b class="num" id="lv-units">—</b><span>وحدة محلية على الخريطة</span></div>
     </div>
     <div class="screens">
-      <div class="scr"><div class="ic" data-icon="camera"></div><div><h3>تطبيق المواطن</h3><p>بلاغ بالصور والموقع في 3 خطوات، ومتابعة وتقييم الحل.</p><span class="who">المواطن</span></div></div>
+      <div class="scr"><div class="ic" data-icon="camera"></div><div><h3>تطبيق المواطن</h3><p>بلاغ في 3 خطوات أو بالمحادثة، وإشعارات بكل جديد، وتقييم الحل.</p><span class="who">المواطن</span></div></div>
       <div class="scr"><div class="ic gold" data-icon="layers"></div><div><h3>غرفة العمليات</h3><p>خريطة لحظية بصوت تنبيه، مؤشرات، ومراجعة الحلول.</p><span class="who">الغرفة</span></div></div>
       <div class="scr"><div class="ic" data-icon="filter"></div><div><h3>قائمة البلاغات</h3><p>بحث وفلاتر وتبويبات للمتأخر، وتفاصيل كل بلاغ، وذهاب للخريطة.</p><span class="who">الغرفة</span></div></div>
       <div class="scr"><div class="ic" data-icon="pin"></div><div><h3>الخريطة (GIS)</h3><p>طبقات، استعلام، شريط زمني، قياس، وتصدير GeoJSON و Excel.</p><span class="who">الغرفة والمحافظ</span></div></div>
@@ -512,9 +622,9 @@
   <h2>مبنية لتكون مستنداً رسمياً</h2>
   <div class="body" style="flex-direction:column">
     <div class="tech">
-      <div class="tcard"><div class="ic" data-icon="camera"></div><h3>تطبيق المواطن</h3><p>يعمل على أندرويد وآيفون، وبدون إنترنت، وعلامة مائية بالتاريخ والإحداثيات على كل صورة.</p><div class="chips"><span>Flutter</span><span>OTP</span><span>Offline</span></div></div>
+      <div class="tcard"><div class="ic" data-icon="camera"></div><h3>تطبيق المواطن</h3><p>يعمل على أندرويد وآيفون، وبدون إنترنت، وعلامة مائية بالتاريخ والإحداثيات على كل صورة.</p><div class="chips"><span>Flutter</span><span>OTP</span><span>Offline</span><span>محادثة</span></div></div>
       <div class="tcard"><div class="ic" data-icon="layers"></div><h3>الخرائط</h3><p>خرائط مفتوحة المصدر بلا رسوم ترخيص، وطبقة أقمار صناعية، وخريطة حرارية للكثافة.</p><div class="chips"><span>OpenStreetMap</span><span>PostGIS</span><span>MapLibre</span></div></div>
-      <div class="tcard"><div class="ic" data-icon="bell"></div><h3>لحظي</h3><p>البلاغ يظهر في غرفة العمليات خلال ثوانٍ، والتصعيد يعمل تلقائياً على مدار الساعة.</p><div class="chips"><span>Real-time</span><span>24/7</span></div></div>
+      <div class="tcard"><div class="ic" data-icon="bell"></div><h3>لحظي</h3><p>البلاغ يظهر في غرفة العمليات خلال ثوانٍ، والمواطن يستلم إشعاراً بكل جديد، والتصعيد يعمل على مدار الساعة.</p><div class="chips"><span>Real-time</span><span>Push</span><span>24/7</span></div></div>
       <div class="tcard"><div class="ic" data-icon="doc"></div><h3>التقارير</h3><p>تقارير PDF رسمية بشعار المحافظة، وتصدير Excel، وتقارير مجدولة يومياً وأسبوعياً.</p><div class="chips"><span>PDF</span><span>Excel</span><span>مجدولة</span></div></div>
     </div>
     <div class="secband">
@@ -552,9 +662,9 @@
     <div class="risks">
       <div class="risk"><div class="rh"><div class="ic red" data-icon="alert"></div><h3>بلاغات كيدية أو صور قديمة</h3><span class="lvl h">مرتفع</span></div><p class="p">بلاغات غير صحيحة قد تُستخدم للإساءة لوحدة أو لشخص.</p><p class="fix">تسجيل إلزامي برقم الموبايل (لا بلاغات مجهولة)، وحد يومي، وعلامة «من المعرض» على الصور القديمة.</p></div>
       <div class="risk"><div class="rh"><div class="ic red" data-icon="filter"></div><h3>رفض البلاغات لتحسين الأرقام</h3><span class="lvl h">مرتفع</span></div><p class="p">قد ترفض وحدة البلاغات الصعبة لتبدو أفضل في الترتيب.</p><p class="fix">الرفض بسبب إلزامي، وعينة يراجعها الفريق مع المواطن، ونسبة الرفض مؤشر رقابي مستقل.</p></div>
-      <div class="risk"><div class="rh"><div class="ic gold" data-icon="camera"></div><h3>الأمية الرقمية وكبار السن</h3><span class="lvl m">متوسط</span></div><p class="p">ليس كل المواطنين قادرين على كتابة بلاغ أو استخدام تطبيق.</p><p class="fix">أيقونات كبيرة، ووصف صوتي بدل الكتابة، وإدخال الغرفة لبلاغات السوشيال نيابة عن المواطن.</p></div>
+      <div class="risk"><div class="rh"><div class="ic gold" data-icon="camera"></div><h3>الأمية الرقمية وكبار السن</h3><span class="lvl m">متوسط</span></div><p class="p">ليس كل المواطنين قادرين على كتابة بلاغ أو استخدام تطبيق.</p><p class="fix">أيقونات كبيرة، وبلاغ بالمحادثة بالكلام بدل الكتابة، وإدخال الغرفة لبلاغات السوشيال نيابة عن المواطن.</p></div>
       <div class="risk"><div class="rh"><div class="ic gold" data-icon="bell"></div><h3>ضعف الإنترنت في القرى</h3><span class="lvl m">متوسط</span></div><p class="p">البلاغ قد يضيع لو انقطع الاتصال أثناء الإرسال.</p><p class="fix">البلاغ يُحفظ على الموبايل ويُرسل تلقائياً عند عودة الإنترنت، مع ضغط الصور.</p></div>
-      <div class="risk"><div class="rh"><div class="ic gold" data-icon="alert"></div><h3>توقعات المواطنين</h3><span class="lvl m">متوسط</span></div><p class="p">بعض المشاكل تحتاج ميزانية أو خطة، والمواطن ينتظر حلاً فورياً.</p><p class="fix">حالة «يحتاج ميزانية / مدرج في خطة» توقف العدّاد بشفافية، وصفحة عامة بالأرقام الحقيقية.</p></div>
+      <div class="risk"><div class="rh"><div class="ic gold" data-icon="alert"></div><h3>توقعات المواطنين</h3><span class="lvl m">متوسط</span></div><p class="p">بعض المشاكل تحتاج ميزانية أو خطة، والمواطن ينتظر حلاً فورياً.</p><p class="fix">إشعار للمواطن في كل خطوة، وحالة «يحتاج ميزانية» توقف العدّاد بشفافية، وصفحة عامة بالأرقام الحقيقية.</p></div>
       <div class="risk"><div class="rh"><div class="ic" data-icon="layers"></div><h3>ترخيص صور الأقمار الصناعية</h3><span class="lvl l">منخفض</span></div><p class="p">بعض مصادر الصور مجانية للعرض فقط وليس للاستخدام الرسمي.</p><p class="fix">استخدام صور المحافظة / هيئة المساحة، أو ترخيص تجاري في مرحلة الإنتاج.</p></div>
     </div>
   </div>
@@ -632,7 +742,7 @@ slides.forEach((s, i) => { const pg = s.querySelector('.pg'); if (pg) pg.textCon
 let cur = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1));
 function fit() { const k = Math.min(innerWidth / 1600, innerHeight / 900); stage.style.transform = `translate(-50%,-50%) scale(${k})`; }
 // entrance choreography: content blocks of each slide rise in order; numbers count up
-const ITEMS = 'h2, .lead, .bignum, .prob, .step, .oneline, .role, .jst, .rule, .ba .col, .krow, .bands, .pcard, .why, .mapbox, .tcard, .secband > div, .risk, .ph, .targets, .ask, .lnum, .scr, .demo-link, .src';
+const ITEMS = 'h2, .lead, .way, .ntf, .acard, .bignum, .prob, .step, .oneline, .role, .jst, .rule, .ba .col, .krow, .bands, .pcard, .why, .mapbox, .tcard, .secband > div, .risk, .ph, .targets, .ask, .lnum, .scr, .demo-link, .src';
 slides.forEach(s => {
   if (s.classList.contains('cover') || s.classList.contains('close')) return;
   [...s.querySelectorAll(ITEMS)].forEach((el, i) => { el.classList.add('anim'); el.style.setProperty('--d', Math.min(i, 18)); });
